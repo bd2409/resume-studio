@@ -16,6 +16,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends
 
 from . import ai, config, db, mailer, payments, render
+from .profile import PROFILE
 from .schemas import Profile, Resume
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -27,7 +28,7 @@ ALLOWED_EXT = {".pdf", ".docx", ".doc", ".rtf", ".odt", ".txt"}
 app = FastAPI(title=config.SITE_NAME, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "templates")
-templates.env.globals.update(cfg=config, year=datetime.now().year)
+templates.env.globals.update(cfg=config, year=datetime.now().year, me=PROFILE)
 
 _generation_lock = threading.Lock()
 _running = set()
@@ -141,7 +142,8 @@ def startup():
 # ------------------------------------------------------------------ website pages
 
 STATIC_PAGES = {
-    "/": "home.html",
+    "/": "personal.html",
+    "/resume": "home.html",
     "/pricing": "pricing.html",
     "/faq": "faq.html",
     "/contact": "contact.html",
