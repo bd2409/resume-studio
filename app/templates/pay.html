@@ -17,6 +17,7 @@
       <tr><td>Tailored resume (Word + PDF)</td><td>Rs {{ (order.amount_paise / 100) | int }}</td></tr>
     </table>
     {% if cashfree %}
+      {% if cf_mode == "sandbox" %}<div class="alert warn">Cashfree test mode: use Cashfree's test UPI or card details. No real money is charged.</div>{% endif %}
       <button class="btn big" id="pay-btn" style="width:100%">Pay Rs {{ (order.amount_paise / 100) | int }}</button>
       <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:12px">UPI, cards, netbanking and wallets. Secured by Cashfree Payments.</p>
     {% elif dev_skip %}

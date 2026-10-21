@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import re
@@ -253,12 +254,31 @@ async def build_submit(
     return RedirectResponse(f"/order/{order['token']}", status_code=303)
 
 
+def is_owner(request: Request):
+    """True when the browser sends the admin password (it does after signing in at /admin)."""
+    auth = request.headers.get("authorization", "")
+    if not config.ADMIN_PASSWORD or not auth.lower().startswith("basic "):
+        return False
+    try:
+        password = base64.b64decode(auth[6:]).decode().partition(":")[2]
+    except Exception:
+        return False
+    return secrets.compare_digest(password, config.ADMIN_PASSWORD)
+
+
+def checkout_open(request: Request):
+    """Real payments for everyone in production; sandbox (test) checkout only for the owner."""
+    if not payments.enabled() or config.AI_MODE != "live":
+        return False
+    return payments.mode() == "production" or is_owner(request)
+
+
 @app.get("/order/{token}", response_class=HTMLResponse)
 def order_page(request: Request, token: str):
     order = load_order(token)
     status = order["status"]
     if status == "awaiting_payment":
-        return page(request, "pay.html", order=order, cashfree=payments.enabled() and config.AI_MODE == "live", cf_mode=payments.mode(),
+        return page(request, "pay.html", order=order, cashfree=checkout_open(request), cf_mode=payments.mode(),
                     payment_failed=request.query_params.get("payment") == "failed",
                     dev_skip=config.DEV_SKIP_PAYMENT, file_count=len(json.loads(order["files_json"])))
     if status in ("paid", "generating"):
@@ -282,12 +302,12 @@ def order_status(token: str):
 
 
 @app.post("/order/{token}/checkout")
-def checkout(token: str):
+def checkout(token: str, request: Request):
     order = load_order(token)
     if order["status"] != "awaiting_payment":
         return JSONResponse({"paid": True})
-    if not payments.enabled() or config.AI_MODE != "live":
-        # Never take money while the AI is not connected.
+    if not checkout_open(request):
+        # Never take money while the AI is not connected, and keep test checkout to the owner.
         raise HTTPException(400, "Payments are not configured")
     cf_order_id, session_id = payments.session_for(order)
     db.update(order["id"], rzp_order_id=cf_order_id)
