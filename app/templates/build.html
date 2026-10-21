@@ -8,6 +8,15 @@
   </div>
   <form class="form-card" method="post" action="/build" enctype="multipart/form-data" id="build-form" style="margin:24px 0 60px">
     {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+    {% set product = form.product or request.query_params.get('product') or 'resume' %}
+    {% if product not in ['resume', 'linkedin', 'bundle'] %}{% set product = 'resume' %}{% endif %}
+    <label>What would you like?</label>
+    <div class="mode-pick prod-pick">
+      {% for key in ['resume', 'bundle', 'linkedin'] %}{% set pr = cfg.PRODUCTS[key] %}
+      <label class="mode{% if product == key %} on{% endif %}"><input type="radio" name="product" value="{{ key }}" {% if product == key %}checked{% endif %}>
+        <strong>{{ pr.label }}</strong><span>Rs {{ '{:,}'.format(pr.price) }}{% if key == 'bundle' %} · save Rs {{ '{:,}'.format(cfg.PRICE_RUPEES + cfg.PRICE_LINKEDIN - cfg.PRICE_BUNDLE) }}{% endif %}</span></label>
+      {% endfor %}
+    </div>
     {% set mode = form.mode or request.query_params.get('mode') or 'tailor' %}
     <div class="mode-pick">
       <label class="mode{% if mode != 'improve' %} on{% endif %}"><input type="radio" name="mode" value="tailor" {% if mode != 'improve' %}checked{% endif %}>
@@ -48,8 +57,10 @@
       </div>
     </div>
 
+    <div id="design-block">
     <label style="margin-top:22px">Choose a design <span class="hint">(you can switch later for free)</span></label>
     {% with selected = form.template or (request.query_params.get('template') if request.query_params.get('template') in resume_templates else 'classic'), autosubmit = False %}{% include "_template_picker.html" %}{% endwith %}
+    </div>
 
     <label class="check" style="margin-top:22px">
       <input type="checkbox" name="consent" value="yes" required>
@@ -70,8 +81,12 @@
     document.getElementById('job_description').required = !improve;
     document.getElementById('target_role').required = improve;
     document.querySelectorAll('.mode').forEach(l => l.classList.toggle('on', l.querySelector('input').checked));
+    const product = document.querySelector('input[name=product]:checked').value;
+    document.getElementById('design-block').style.display = product === 'linkedin' ? 'none' : '';
+    document.getElementById('submit').textContent = 'Continue to payment';
   }
   modes.forEach(m => m.addEventListener('change', syncMode));
+  document.querySelectorAll('input[name=product]').forEach(m => m.addEventListener('change', syncMode));
   syncMode();
 })();
 (function () {

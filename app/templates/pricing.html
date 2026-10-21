@@ -5,10 +5,11 @@
   <div class="wrap">
     <div class="section-title">
       <h2>Simple pricing</h2>
-      <p>One price per tailored resume. No subscription.</p>
+      <p>Pay once per order. No subscription, no auto-renewal.</p>
     </div>
+    <div class="price-row">
     <div class="card price-card">
-      <h3>Tailored resume</h3>
+      <h3>Resume + cover letter</h3>
       <div class="price">Rs {{ cfg.PRICE_RUPEES }} <small>per resume</small></div>
       <ul class="checks">
         <li>Written for one specific job description, or improved for the role you want</li>
@@ -23,7 +24,36 @@
         <li>Up to {{ cfg.MAX_REGENERATIONS }} free regenerations with your instructions</li>
       </ul>
       <a class="btn big" href="/build" style="width:100%">Build my resume</a>
-      <p style="color:var(--muted);font-size:13px;margin-top:12px">Applying to a different job? Each new job description is a new resume.</p>
+      <p style="color:var(--muted);font-size:13px;margin-top:12px">Applying to another job later? Get an extra tailored version for Rs {{ cfg.PRICE_VERSION }}, with nothing to upload again.</p>
+    </div>
+
+    <div class="card price-card featured">
+      <span class="badge">Best value</span>
+      <h3>Resume + LinkedIn makeover</h3>
+      <div class="price">Rs {{ '{:,}'.format(cfg.PRICE_BUNDLE) }} <small>one time</small></div>
+      <p style="color:var(--ok);font-weight:700;margin:-6px 0 10px">You save Rs {{ cfg.PRICE_RUPEES + cfg.PRICE_LINKEDIN - cfg.PRICE_BUNDLE }}</p>
+      <ul class="checks">
+        <li>Everything in the resume package</li>
+        <li>New LinkedIn headline, About and experience</li>
+        <li>Top skills, Featured ideas and banner tagline</li>
+        <li>Consistent story across resume and profile</li>
+      </ul>
+      <a class="btn big gold" href="/build?product=bundle" style="width:100%">Get the bundle</a>
+    </div>
+
+    <div class="card price-card">
+      <h3>LinkedIn profile makeover</h3>
+      <div class="price">Rs {{ cfg.PRICE_LINKEDIN }} <small>one time</small></div>
+      <ul class="checks">
+        <li>Headline written for the searches recruiters run</li>
+        <li>About section in your voice, with your real wins</li>
+        <li>Rewritten experience descriptions</li>
+        <li>Top 15 to 25 skills in the right order</li>
+        <li>Featured section ideas, banner line and profile tips</li>
+        <li>Copy-paste ready, with character counts</li>
+      </ul>
+      <a class="btn big" href="/build?product=linkedin" style="width:100%">Upgrade my LinkedIn</a>
+    </div>
     </div>
   </div>
 </section>

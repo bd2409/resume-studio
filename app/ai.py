@@ -13,7 +13,7 @@ import anthropic
 from docx import Document
 
 from . import config, render
-from .schemas import CoverLetter, Draft, Profile, Resume, Verified
+from .schemas import CoverLetter, LinkedInProfile, Draft, Profile, Resume, Verified
 
 _client = None
 
@@ -129,6 +129,18 @@ Rules:
 - Plain text only, no placeholders such as [Company]."""
 
 
+LINKEDIN_SYSTEM = """You are a LinkedIn profile strategist who has helped thousands of professionals get found by recruiters. You receive the person's fact bank (from their own resumes) and the role they are targeting. Rewrite their LinkedIn profile.
+
+Truthfulness (non-negotiable): use only facts from the fact bank. Never invent employers, titles, dates, numbers, tools or results.
+
+Headline (max 220 characters): target role and level, 2 to 3 specialisms recruiters search for, and one proof point if it fits. Use " | " separators. No emojis, no "aspiring", no "open to work".
+About (1,500 to 2,500 characters): written in first person, warm and confident. Open with a hook line about the value they create, then their story and focus, 3 to 5 quantified wins (can be a short list with "-" bullets), what they are looking for or how they help, and a closing line inviting contact. Weave in the keywords recruiters for the target role search for. Short paragraphs separated by blank lines.
+Experience: for each role in the last 10 years, a description of 600 to 1,500 characters: one line of scope, then 3 to 5 achievement lines starting with "-". First person implied, no "I" at the start of every line.
+Skills: 15 to 25, ordered by importance for the target role, each supported by the fact bank, using LinkedIn's standard skill names where possible.
+Featured ideas, banner tagline and tips: specific to this person, practical, based on their real work.
+Plain text only (no markdown asterisks or headings). Indian conventions (Rs, lakh, crore) are fine where the source uses them."""
+
+
 def job_brief(job_description: str, target_role: str = ""):
     """The job text the writer works from. Without a posting, the writer optimises for the target role in general."""
     if job_description.strip():
@@ -200,6 +212,31 @@ def write_and_verify(profile: Profile, job_description: str, instructions: str =
         "conflicts": profile.conflicts,
     }
     return verified.resume, notes
+
+
+def write_linkedin(profile: Profile, job: str, instructions: str = ""):
+    extra = f"\n\n<customer_instructions>\n{instructions}\n</customer_instructions>" if instructions else ""
+    return _call(
+        LINKEDIN_SYSTEM,
+        f"<fact_bank>\n{profile.model_dump_json(indent=1)}\n</fact_bank>\n\n<target>\n{job}\n</target>{extra}",
+        LinkedInProfile,
+        effort="high",
+    )
+
+
+def mock_linkedin():
+    return LinkedInProfile(
+        headline="Senior Product Manager | Payments & Fintech Platforms | Scaled UPI AutoPay to Rs 1,200 Cr | B2B SaaS",
+        about=("This is sample content, shown because the AI is not connected yet.\n\n"
+               "With the AI connected, this About section is written from the customer's real resumes, in first person, "
+               "with their strongest quantified wins and the keywords recruiters search for."),
+        experience=[{"company": "PayNova Technologies", "title": "Senior Product Manager",
+                     "description": "Own merchant payments for 2M+ small businesses.\n- Launched UPI AutoPay and e-mandate flows, adding Rs 1,200 Cr in annual processed volume.\n- Cut merchant activation time from 5 days to 36 hours."}],
+        skills=["Product Management", "Payments", "Fintech", "B2B SaaS", "Product Strategy", "SQL"],
+        featured_ideas=["A short post on how UPI AutoPay was launched", "The Global Fintech Fest 2024 talk"],
+        banner_tagline="Building payments that small businesses love",
+        tips=["Add a professional photo with a plain background", "Turn on Creator mode and post weekly about payments"],
+    )
 
 
 def write_cover_letter(profile: Profile, job_description: str, resume: Resume):

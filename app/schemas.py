@@ -108,3 +108,19 @@ class CoverLetter(BaseModel):
     greeting: str = Field(description="For example 'Dear Hiring Manager,' or 'Dear Hiring Team at <Company>,'")
     paragraphs: List[str] = Field(description="3 or 4 paragraphs, plain text")
     closing: str = Field(description="For example 'Sincerely,'")
+
+
+class LinkedInRole(BaseModel):
+    company: str
+    title: str
+    description: str = Field(description="Text for this role's LinkedIn description box, under 2,000 characters")
+
+
+class LinkedInProfile(BaseModel):
+    headline: str = Field(description="LinkedIn headline, at most 220 characters")
+    about: str = Field(description="LinkedIn About section, 1,500 to 2,500 characters, short paragraphs separated by blank lines")
+    experience: List[LinkedInRole] = Field(description="Most recent first; the last 10 years of roles")
+    skills: List[str] = Field(description="Top skills to list on LinkedIn, most important first, 15 to 25 items")
+    featured_ideas: List[str] = Field(description="3 to 5 ideas for the Featured section, based only on their real work")
+    banner_tagline: str = Field(description="A short line for a profile banner image, under 60 characters")
+    tips: List[str] = Field(description="3 to 6 specific, practical tips to improve this profile's reach with recruiters")

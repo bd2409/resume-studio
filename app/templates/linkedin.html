@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block title %}Your LinkedIn profile | {{ cfg.SITE_NAME }}{% endblock %}
+{% macro box(id, title, text, limit, rows, hint='') %}
+<div class="li-section">
+  <h3>{{ title }} <button type="button" class="btn small light copy-btn" data-copy="{{ id }}">Copy</button></h3>
+  {% if hint %}<p class="meta">{{ hint }}</p>{% endif %}
+  <textarea id="{{ id }}" rows="{{ rows }}" data-limit="{{ limit }}">{{ text }}</textarea>
+  <div class="count" data-for="{{ id }}"></div>
+</div>
+{% endmacro %}
+{% block content %}
+<div class="wrap narrow" style="max-width:860px">
+  <div class="page-head">
+    <h1>Your new LinkedIn profile</h1>
+    <p>Everything below is written from your real experience. Edit anything you like here, then use <strong>Copy</strong> and paste each part into LinkedIn.</p>
+    {% if product.resume %}<p><a href="/order/{{ order.token }}">← Back to your resume and cover letter</a></p>{% endif %}
+  </div>
+  {% if last_failed %}<div class="alert err">The last regeneration didn't work, so your previous version is shown. Please try again, or contact us.</div>{% endif %}
+
+  {{ box('headline', 'Headline', li.headline, 220, 2, 'On LinkedIn: click the pencil on your intro card → Headline.') }}
+  {{ box('about', 'About', li.about, 2600, 14, 'On LinkedIn: About section → pencil icon. Paste it as is; the line breaks carry over.') }}
+
+  <h2 style="margin:30px 0 10px;font-size:22px">Experience</h2>
+  <p class="meta" style="color:var(--muted);margin-top:0">On LinkedIn: Experience → pencil on each role → Description.</p>
+  {% for r in li.experience %}
+  {{ box('exp' ~ loop.index, r.title ~ ' · ' ~ r.company, r.description, 2000, 8) }}
+  {% endfor %}
+
+  <div class="li-section">
+    <h3>Top skills <button type="button" class="btn small light copy-btn" data-copy="skills-text">Copy</button></h3>
+    <p class="meta">Add these under Skills, in this order. Pin the first three as your top skills.</p>
+    <div class="li-skills">{% for sk in li.skills %}<span>{{ sk }}</span>{% endfor %}</div>
+    <textarea id="skills-text" hidden>{{ li.skills | join(', ') }}</textarea>
+  </div>
+
+  <div class="li-section">
+    <h3>Banner tagline</h3>
+    <p class="meta">Put this line on your profile background image (Canva has free LinkedIn banner templates).</p>
+    <p style="font-size:18px;font-weight:700;margin:4px 0 0">{{ li.banner_tagline }}</p>
+  </div>
+
+  <div class="grid two" style="gap:16px;margin-bottom:16px">
+    <div class="li-section" style="margin:0">
+      <h3>Featured section ideas</h3>
+      <ul class="checks" style="margin:6px 0 0">{% for f in li.featured_ideas %}<li>{{ f }}</li>{% endfor %}</ul>
+    </div>
+    <div class="li-section" style="margin:0">
+      <h3>Tips to get found by recruiters</h3>
+      <ul class="checks" style="margin:6px 0 0">{% for t in li.tips %}<li>{{ t }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+
+  {% if can_edit and regen_left %}
+  <div class="card" style="margin:24px 0 60px">
+    <h3 style="margin-top:0">Want a different angle?</h3>
+    <p>Tell us what to change and we'll rewrite your LinkedIn profile. {{ regen_left }} regeneration{{ '' if regen_left == 1 else 's' }} left.</p>
+    <form method="post" action="/order/{{ order.token }}/regenerate" onsubmit="return confirm('Rewrite your LinkedIn profile? Edits on this page will be replaced.')">
+      <input type="hidden" name="part" value="linkedin">
+      <textarea name="instructions" rows="3" style="width:100%" placeholder="For example: make the About section shorter and more conversational; target consulting roles."></textarea>
+      <button class="btn light" style="margin-top:10px">Regenerate</button>
+    </form>
+  </div>
+  {% else %}<div style="height:50px"></div>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    const el = document.getElementById(btn.dataset.copy);
+    try { await navigator.clipboard.writeText(el.value); }
+    catch (e) { el.hidden = false; el.select(); document.execCommand('copy'); if (btn.dataset.copy === 'skills-text') el.hidden = true; }
+    const old = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = old, 1500);
+  });
+});
+document.querySelectorAll('textarea[data-limit]').forEach(function (ta) {
+  const counter = document.querySelector('.count[data-for="' + ta.id + '"]');
+  const limit = +ta.dataset.limit;
+  function update() { counter.textContent = ta.value.length + ' / ' + limit + ' characters'; counter.classList.toggle('over', ta.value.length > limit); }
+  ta.addEventListener('input', update); update();
+});
+</script>
+{% endblock %}

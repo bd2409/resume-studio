@@ -53,6 +53,21 @@
   </div>
 </section>
 
+<section class="block soft" id="services">
+  <div class="wrap">
+    <div class="section-title">
+      <h2>More ways to get hired</h2>
+      <p>Built from the same resumes you upload. Nothing to fill in twice.</p>
+    </div>
+    <div class="grid three">
+      <div class="card"><div class="icon">📄</div><h3>Resume + cover letter</h3><p>Tailored to the job, with a job-match score. <strong>Rs {{ cfg.PRICE_RUPEES }}</strong></p><a href="/build?product=resume">Start →</a></div>
+      <div class="card"><div class="icon">💼</div><h3>LinkedIn profile makeover</h3><p>Headline, About, experience and skills rewritten so recruiters find you. <strong>Rs {{ cfg.PRICE_LINKEDIN }}</strong></p><a href="/build?product=linkedin">Start →</a></div>
+      <div class="card"><div class="icon">⭐</div><h3>Resume + LinkedIn bundle</h3><p>One consistent story everywhere recruiters look. <strong>Rs {{ '{:,}'.format(cfg.PRICE_BUNDLE) }}</strong></p><a href="/build?product=bundle">Start →</a></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);margin-top:18px">Already a customer? Get a new version for another job for just Rs {{ cfg.PRICE_VERSION }} from your resume page.</p>
+  </div>
+</section>
+
 <section class="block" id="templates">
   <div class="wrap">
     <div class="section-title">

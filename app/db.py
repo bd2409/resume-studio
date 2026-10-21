@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS orders (
     target_role     TEXT NOT NULL DEFAULT '',
     cover_json      TEXT,
     user_email      TEXT,
+    product         TEXT NOT NULL DEFAULT 'resume',
+    parent_id       TEXT,
+    linkedin_json   TEXT,
     updated_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS orders_rzp ON orders (rzp_order_id);
@@ -58,7 +61,8 @@ def init():
         c.executescript(SCHEMA)
         cols = {r["name"] for r in c.execute("PRAGMA table_info(orders)")}
         for col, ddl in (("template", "TEXT NOT NULL DEFAULT 'classic'"), ("target_role", "TEXT NOT NULL DEFAULT ''"),
-                         ("cover_json", "TEXT"), ("user_email", "TEXT")):
+                         ("cover_json", "TEXT"), ("user_email", "TEXT"),
+                         ("product", "TEXT NOT NULL DEFAULT 'resume'"), ("parent_id", "TEXT"), ("linkedin_json", "TEXT")):
             if col not in cols:
                 c.execute(f"ALTER TABLE orders ADD COLUMN {col} {ddl}")
 

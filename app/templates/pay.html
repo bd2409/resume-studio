@@ -14,11 +14,11 @@
       <tr><td>Name</td><td>{{ order.customer_name }}</td></tr>
       <tr><td>Email</td><td>{{ order.email }}</td></tr>
       <tr><td>Resumes uploaded</td><td>{{ file_count }}</td></tr>
-      <tr><td>Tailored resume (Word + PDF)</td><td>Rs {{ (order.amount_paise / 100) | int }}</td></tr>
+      <tr><td>{{ product.label }}</td><td>Rs {{ '{:,}'.format((order.amount_paise // 100)) }}</td></tr>
     </table>
     {% if cashfree %}
       {% if cf_mode == "sandbox" %}<div class="alert warn">Cashfree test mode: use Cashfree's test UPI or card details. No real money is charged.</div>{% endif %}
-      <button class="btn big" id="pay-btn" style="width:100%">Pay Rs {{ (order.amount_paise / 100) | int }}</button>
+      <button class="btn big" id="pay-btn" style="width:100%">Pay Rs {{ '{:,}'.format((order.amount_paise // 100)) }}</button>
       <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:12px">UPI, cards, netbanking and wallets. Secured by Cashfree Payments.</p>
     {% elif dev_skip %}
       <div class="alert warn">Test mode: payments are not set up yet, so this button skips payment.</div>
@@ -51,7 +51,7 @@ document.getElementById('pay-btn').addEventListener('click', async function () {
     cashfree.checkout({ paymentSessionId: data.payment_session_id, redirectTarget: '_self' });
   } catch (e) {
     err.textContent = 'Could not start payment. Please try again.'; err.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Pay Rs {{ (order.amount_paise / 100) | int }}';
+    btn.disabled = false; btn.textContent = 'Pay Rs {{ '{:,}'.format((order.amount_paise // 100)) }}';
   }
 });
 </script>

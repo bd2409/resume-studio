@@ -21,7 +21,7 @@
       <div class="doc-meta">
         <strong>{{ o.notes.target_role or o.target_role or 'Resume' }}</strong>
         <span>{{ o.created_at[:10] }} · {{ resume_templates.get(o.template or 'classic', {}).get('label', '') }}{% if o.notes.match %} · {{ o.notes.match.percent }}% match{% endif %}</span>
-        {% if o.cover_json %}<span class="doc-tag">+ Cover letter</span>{% endif %}
+        <span>{{ cfg.PRODUCTS.get(o.product or 'resume', {}).get('label', '') }}</span>
       </div>
     </a>
     {% endfor %}

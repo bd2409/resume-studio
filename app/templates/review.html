@@ -44,6 +44,12 @@
         </div>
       </div>
       {% endif %}
+      {% if has_linkedin %}
+      <a class="card cover-card li-card" href="/order/{{ order.token }}/linkedin">
+        <strong>Your new LinkedIn profile →</strong>
+        <p>Headline, About, experience and skills, ready to copy into LinkedIn.</p>
+      </a>
+      {% endif %}
       {% if cover %}
       <div class="card cover-card">
         <strong>Your cover letter</strong>
@@ -55,6 +61,14 @@
         </div>
       </div>
       {% endif %}
+      <details class="card cover-card version-card">
+        <summary><strong>Applying for another job?</strong> Get a new version tailored to it for Rs {{ cfg.PRICE_VERSION }}.</summary>
+        <form method="post" action="/order/{{ order.token }}/new-version" style="margin-top:10px">
+          <textarea name="job_description" rows="6" minlength="150" required placeholder="Paste the other job description here"></textarea>
+          <p style="font-size:13px;color:var(--muted);margin:6px 0 10px">We reuse your resumes and design, so there's nothing to upload. You get a new tailored resume and cover letter.</p>
+          <button class="btn small">Continue to payment</button>
+        </form>
+      </details>
       {% if notes.gap_notes %}
       <div class="alert warn notes">
         <strong>Worth checking:</strong> the job asks for these, but your resumes don't show them. Add them only if they're true.
@@ -168,6 +182,7 @@
         {% if regen_left %}
         <p>Want a different angle? Tell us what to change and we'll rewrite it. {{ regen_left }} regeneration{{ '' if regen_left == 1 else 's' }} left. This replaces your current edits.</p>
         <form method="post" action="/order/{{ order.token }}/regenerate" onsubmit="return confirm('Regenerate the resume? Your current edits will be replaced.')">
+          <input type="hidden" name="part" value="resume">
           <textarea name="instructions" rows="3" placeholder="For example: focus more on team leadership and stakeholder management; keep it to one page."></textarea>
           <button class="btn light" style="margin-top:10px">Regenerate</button>
         </form>

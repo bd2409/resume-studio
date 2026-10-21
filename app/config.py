@@ -52,3 +52,14 @@ FILES_DIR.mkdir(parents=True, exist_ok=True)
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 # Signs login cookies. Set a long random value in production so logins survive restarts.
 SECRET_KEY = os.getenv("SECRET_KEY", "") or os.getenv("ADMIN_PASSWORD", "") or __import__("secrets").token_hex(32)
+
+# What customers can buy. "resume" and "linkedin" say which deliverables an order produces.
+PRICE_LINKEDIN = int(os.getenv("PRICE_LINKEDIN", "799"))
+PRICE_BUNDLE = int(os.getenv("PRICE_BUNDLE", "1099"))
+PRICE_VERSION = int(os.getenv("PRICE_VERSION", "199"))
+PRODUCTS = {
+    "resume": {"label": "Resume + cover letter", "price": PRICE_RUPEES, "resume": True, "linkedin": False},
+    "linkedin": {"label": "LinkedIn profile makeover", "price": PRICE_LINKEDIN, "resume": False, "linkedin": True},
+    "bundle": {"label": "Resume + cover letter + LinkedIn makeover", "price": PRICE_BUNDLE, "resume": True, "linkedin": True},
+    "version": {"label": "Extra job version (resume + cover letter)", "price": PRICE_VERSION, "resume": True, "linkedin": False},
+}

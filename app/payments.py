@@ -70,7 +70,7 @@ def create_order(order):
             "return_url": f"{config.SITE_URL}/order/{order['token']}/payment-return",
             "notify_url": f"{config.SITE_URL}/webhooks/cashfree",
         },
-        "order_note": "Tailored resume (Word + PDF)",
+        "order_note": config.PRODUCTS.get(order.get("product") or "resume", {}).get("label", "Resume")[:200],
     })
     return res["order_id"], res["payment_session_id"]
 

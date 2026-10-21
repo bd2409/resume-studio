@@ -95,18 +95,32 @@ def render_files(order, resume: Resume):
 
 # ------------------------------------------------------------------ generation
 
-def run_generation(order_id, instructions=""):
+def product_of(order):
+    return config.PRODUCTS.get(order.get("product") or "resume", config.PRODUCTS["resume"])
+
+
+def run_generation(order_id, instructions="", part="all"):
+    """part: "all" on first run, or "resume" / "linkedin" when the customer regenerates one deliverable."""
     with _generation_lock:
         if order_id in _running:
             return
         _running.add(order_id)
     try:
         order = db.get_by_id(order_id)
+        product = product_of(order)
+        do_resume = product["resume"] and part in ("all", "resume")
+        do_linkedin = product["linkedin"] and part in ("all", "linkedin")
+        first_time = not order["resume_json"] and not order["linkedin_json"]
         db.update(order_id, status="generating", error="", progress="Reading your resumes")
+        updates = {}
         if config.AI_MODE == "mock":
             time.sleep(2)
-            resume, notes = ai.mock_generate()
-            cover = None if order["cover_json"] else ai.mock_cover_letter(resume)
+            if do_resume:
+                resume, notes = ai.mock_generate()
+                if not order["cover_json"]:
+                    updates["cover_json"] = ai.mock_cover_letter(resume).model_dump_json()
+            if do_linkedin:
+                updates["linkedin_json"] = ai.mock_linkedin().model_dump_json()
         else:
             if order["profile_json"]:
                 profile = Profile.model_validate_json(order["profile_json"])
@@ -114,24 +128,26 @@ def run_generation(order_id, instructions=""):
                 files = [order_dir(order_id) / "uploads" / f for f in json.loads(order["files_json"])]
                 profile = ai.extract_profile(files)
                 db.update(order_id, profile_json=profile.model_dump_json())
-            db.update(order_id, progress="Writing and checking your tailored resume")
             job = ai.job_brief(order["job_description"], order["target_role"])
-            resume, notes = ai.write_and_verify(profile, job, instructions)
-            cover = None
-            if not order["cover_json"]:
-                db.update(order_id, progress="Writing your cover letter")
-                try:
-                    cover = ai.write_cover_letter(profile, job, resume)
-                except Exception:
-                    log.exception("Cover letter failed for %s", order_id)  # the resume still ships
-        db.update(order_id, progress="Creating your Word and PDF files")
-        if cover:
-            db.update(order_id, cover_json=cover.model_dump_json())
-        order = db.get_by_id(order_id)
-        render_files(order, resume)
-        first_time = not order["resume_json"]
-        db.update(order_id, status="ready", progress="", resume_json=resume.model_dump_json(),
-                  notes_json=json.dumps(notes))
+            if do_resume:
+                db.update(order_id, progress="Writing and checking your tailored resume")
+                resume, notes = ai.write_and_verify(profile, job, instructions)
+                if not order["cover_json"]:
+                    db.update(order_id, progress="Writing your cover letter")
+                    try:
+                        updates["cover_json"] = ai.write_cover_letter(profile, job, resume).model_dump_json()
+                    except Exception:
+                        log.exception("Cover letter failed for %s", order_id)  # the resume still ships
+            if do_linkedin:
+                db.update(order_id, progress="Rewriting your LinkedIn profile")
+                updates["linkedin_json"] = ai.write_linkedin(profile, job, instructions).model_dump_json()
+        if updates:
+            db.update(order_id, **updates)
+        if do_resume:
+            db.update(order_id, progress="Creating your Word and PDF files")
+            render_files(db.get_by_id(order_id), resume)
+            db.update(order_id, resume_json=resume.model_dump_json(), notes_json=json.dumps(notes))
+        db.update(order_id, status="ready", progress="")
         if first_time:
             mailer.order_ready(db.get_by_id(order_id))
     except Exception as exc:
@@ -142,9 +158,9 @@ def run_generation(order_id, instructions=""):
             _running.discard(order_id)
 
 
-def start_generation(background: BackgroundTasks, order_id, instructions=""):
+def start_generation(background: BackgroundTasks, order_id, instructions="", part="all"):
     db.update(order_id, status="generating", progress="Starting")
-    background.add_task(run_generation, order_id, instructions)
+    background.add_task(run_generation, order_id, instructions, part)
 
 
 def cleanup_loop():
@@ -288,6 +304,7 @@ async def build_submit(
     phone: str = Form(...),
     job_description: str = Form(""),
     mode: str = Form("tailor"),
+    product: str = Form("resume"),
     target_role: str = Form(""),
     consent: str = Form(None),
     template: str = Form(render.DEFAULT_TEMPLATE),
@@ -296,10 +313,12 @@ async def build_submit(
     if template not in render.TEMPLATES:
         template = render.DEFAULT_TEMPLATE
     mode = "improve" if mode == "improve" else "tailor"
+    if product not in ("resume", "linkedin", "bundle"):
+        product = "resume"
     if mode == "improve":
         job_description = ""
     form = {"customer_name": customer_name, "email": email, "phone": phone, "job_description": job_description,
-            "template": template, "mode": mode, "target_role": target_role}
+            "template": template, "mode": mode, "target_role": target_role, "product": product}
     resumes = [f for f in resumes if f.filename]
 
     def fail(msg):
@@ -331,7 +350,7 @@ async def build_submit(
         saved.append((ext, data))
 
     order = db.create_order(customer_name.strip(), email.strip(), phone.strip(), job_description.strip(),
-                            [], config.PRICE_RUPEES * 100)
+                            [], config.PRODUCTS[product]["price"] * 100)
     up = order_dir(order["id"]) / "uploads"
     up.mkdir(parents=True, exist_ok=True)
     names = []
@@ -339,7 +358,7 @@ async def build_submit(
         name = f"resume_{i}{ext}"
         (up / name).write_bytes(data)
         names.append(name)
-    db.update(order["id"], files_json=json.dumps(names), template=template, target_role=target_role.strip()[:120],
+    db.update(order["id"], files_json=json.dumps(names), template=template, target_role=target_role.strip()[:120], product=product,
               user_email=current_user_email(request))
     return RedirectResponse(f"/order/{order['token']}", status_code=303)
 
@@ -370,11 +389,14 @@ def order_page(request: Request, token: str):
     if status == "awaiting_payment":
         return page(request, "pay.html", order=order, cashfree=checkout_open(request), cf_mode=payments.mode(),
                     payment_failed=request.query_params.get("payment") == "failed",
-                    dev_skip=config.DEV_SKIP_PAYMENT, file_count=len(json.loads(order["files_json"])))
+                    dev_skip=config.DEV_SKIP_PAYMENT, file_count=len(json.loads(order["files_json"])),
+                    product=product_of(order))
     if status in ("paid", "generating"):
         return page(request, "progress.html", order=order)
-    if status == "failed" and not order["resume_json"]:
+    if status == "failed" and not order["resume_json"] and not order["linkedin_json"]:
         return page(request, "failed.html", order=order)
+    if not order["resume_json"]:
+        return RedirectResponse(f"/order/{token}/linkedin", status_code=303)
     resume = Resume.model_validate_json(order["resume_json"])
     notes = json.loads(order["notes_json"] or "{}")
     previews = sorted(order_dir(order["id"]).glob("preview-*.png"))
@@ -383,7 +405,39 @@ def order_page(request: Request, token: str):
                 pages=len(previews),
                 can_edit=editable(order),
                 regen_left=max(0, config.MAX_REGENERATIONS - order["regenerations"]),
-                version=int(time.time()), last_failed=status == "failed")
+                version=int(time.time()), last_failed=status == "failed",
+                product=product_of(order), has_linkedin=bool(order["linkedin_json"]))
+
+
+@app.get("/order/{token}/linkedin", response_class=HTMLResponse)
+def linkedin_page(request: Request, token: str):
+    order = load_order(token)
+    if not order["linkedin_json"] or order["status"] in ("awaiting_payment", "paid", "generating"):
+        return RedirectResponse(f"/order/{token}", status_code=303)
+    from .schemas import LinkedInProfile
+    li = LinkedInProfile.model_validate_json(order["linkedin_json"])
+    return page(request, "linkedin.html", order=order, li=li, product=product_of(order),
+                can_edit=editable(order), regen_left=max(0, config.MAX_REGENERATIONS - order["regenerations"]),
+                last_failed=order["status"] == "failed")
+
+
+@app.post("/order/{token}/new-version")
+def new_version(token: str, job_description: str = Form(...)):
+    """A paid follow-up: same customer and fact bank, a new job description, a new resume and cover letter."""
+    parent = load_order(token)
+    if not parent["paid_at"]:
+        raise HTTPException(400, "This order can't be used for a new version")
+    if len(job_description.strip()) < 150:
+        raise HTTPException(400, "Please paste the full job description")
+    child = db.create_order(parent["customer_name"], parent["email"], parent["phone"], job_description.strip(),
+                            [], config.PRICE_VERSION * 100)
+    src, dst = order_dir(parent["id"]) / "uploads", order_dir(child["id"]) / "uploads"
+    if src.exists():
+        shutil.copytree(src, dst)
+    db.update(child["id"], files_json=parent["files_json"], profile_json=parent["profile_json"],
+              template=parent["template"], user_email=parent["user_email"], product="version",
+              parent_id=parent["id"])
+    return RedirectResponse(f"/order/{child['token']}", status_code=303)
 
 
 @app.get("/order/{token}/status")
@@ -535,15 +589,16 @@ def change_template(token: str, template: str = Form(...)):
 
 
 @app.post("/order/{token}/regenerate")
-def regenerate(token: str, background: BackgroundTasks, instructions: str = Form("")):
+def regenerate(token: str, background: BackgroundTasks, instructions: str = Form(""), part: str = Form("resume")):
     order = load_order(token)
     if not editable(order) or order["regenerations"] >= config.MAX_REGENERATIONS:
         raise HTTPException(400, "No regenerations left for this order")
     if order["status"] not in ("ready", "failed"):
         return RedirectResponse(f"/order/{token}", status_code=303)
     db.update(order["id"], regenerations=order["regenerations"] + 1)
-    start_generation(background, order["id"], instructions.strip()[:1000])
-    return RedirectResponse(f"/order/{token}", status_code=303)
+    part = "linkedin" if part == "linkedin" else "resume"
+    start_generation(background, order["id"], instructions.strip()[:1000], part)
+    return RedirectResponse(f"/order/{token}" + ("/linkedin" if part == "linkedin" else ""), status_code=303)
 
 
 @app.get("/order/{token}/download/{kind}")
