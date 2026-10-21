@@ -11,6 +11,7 @@
 
   <div style="margin:18px 0">
     {% if request.query_params.get('saved') %}<div class="alert ok">Your changes are saved and the files are updated.</div>{% endif %}
+    {% if pages > 2 %}<div class="alert warn">Your resume is now {{ pages }} pages. Recruiters prefer two pages at most, so consider shortening older roles or removing a few lines.</div>{% endif %}
     {% if last_failed %}<div class="alert err">The last regeneration didn't work, so your previous version is shown. Please try again, or contact us.</div>{% endif %}
   </div>
 

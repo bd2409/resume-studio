@@ -30,6 +30,8 @@ _lock = threading.Lock()  # the active theme is module state, so builds run one 
 FONT = "Calibri"
 ACCENT = RGBColor(0x1F, 0x3A, 0x5F)
 _theme = TEMPLATES[DEFAULT_TEMPLATE]
+_compact = False  # tighter type and spacing, used when the normal layout runs past the page limit
+MAX_PAGES = 2
 
 
 def use_template(key):
@@ -42,15 +44,15 @@ def use_template(key):
 def set_base_styles(doc):
     normal = doc.styles["Normal"]
     normal.font.name = FONT
-    normal.font.size = Pt(10.5)
+    normal.font.size = Pt(10 if _compact else 10.5)
     normal.element.rPr.rFonts.set(qn("w:eastAsia"), FONT)
     pf = normal.paragraph_format
     pf.space_before = Pt(0)
     pf.space_after = Pt(2)
-    pf.line_spacing = 1.08
+    pf.line_spacing = 1.0 if _compact else 1.08
     for sec in doc.sections:
         sec.page_height, sec.page_width = Cm(29.7), Cm(21.0)
-        sec.top_margin = sec.bottom_margin = Cm(1.4)
+        sec.top_margin = sec.bottom_margin = Cm(1.1 if _compact else 1.4)
         sec.left_margin = sec.right_margin = Cm(1.5)
 
 
@@ -168,10 +170,82 @@ def competencies(doc, items, cols=3):
         p.paragraph_format.space_after = Pt(1)
 
 
-def build(data, out, template=DEFAULT_TEMPLATE):
+def build(data, out, template=DEFAULT_TEMPLATE, compact=False):
+    global _compact
     with _lock:
         use_template(template)
-        _build(data, out)
+        _compact = compact
+        try:
+            _build(data, out)
+        finally:
+            _compact = False
+
+
+def page_count(pdf_path):
+    out = subprocess.run(["pdfinfo", str(pdf_path)], capture_output=True, text=True, timeout=30).stdout
+    for line in out.splitlines():
+        if line.startswith("Pages:"):
+            return int(line.split()[1])
+    return 0
+
+
+def _trim_once(data):
+    """Drops the least important line: extra achievements and certifications, then older roles' last bullets."""
+    if len(data["achievements"]) > 3:
+        data["achievements"].pop()
+        return True
+    if len(data["certifications"]) > 4:
+        data["certifications"].pop()
+        return True
+    if len(data["competencies"]) > 9:
+        data["competencies"].pop()
+        return True
+    jobs = data["experience"]
+    for floor in (3, 2, 1):
+        for job in reversed(jobs[1:] if len(jobs) > 1 else jobs):
+            if len(job["bullets"]) > floor:
+                job["bullets"].pop()
+                return True
+        if jobs and len(jobs[0]["bullets"]) > floor + 1:
+            jobs[0]["bullets"].pop()
+            return True
+    if data["achievements"]:
+        data["achievements"].pop()
+        return True
+    return False
+
+
+def build_fitted(data, out, template=DEFAULT_TEMPLATE, trim=False):
+    """Builds the resume and its PDF within MAX_PAGES: first the normal layout, then the compact one, then
+    (only for AI-written resumes, when trim=True) dropping the least important lines.
+    Returns (data, pages); data is a trimmed copy when lines were dropped."""
+    for compact in (False, True):
+        build(data, out, template, compact)
+        pages = page_count(to_pdf(out))
+        if pages <= MAX_PAGES:
+            return data, pages
+    if not trim:
+        return data, pages
+    data = json.loads(json.dumps(data))
+    for i, job in enumerate(data["experience"]):  # first, the usual caps for a two-page resume
+        del job["bullets"][(6, 5, 3, 3)[i] if i < 4 else 2:]
+    del data["achievements"][4:]
+    del data["certifications"][5:]
+    build(data, out, template, compact=True)
+    pages = page_count(to_pdf(out))
+    for _ in range(30):
+        if pages <= MAX_PAGES:
+            break
+        changed = True
+        for _ in range(2 + 6 * max(0, pages - MAX_PAGES - 1)):  # bigger steps while far over the limit
+            changed = _trim_once(data)
+            if not changed:
+                break
+        build(data, out, template, compact=True)
+        pages = page_count(to_pdf(out))
+        if pages <= MAX_PAGES or not changed:
+            break
+    return data, pages
 
 
 def _build(data, out):

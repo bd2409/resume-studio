@@ -81,16 +81,20 @@ def editable(order):
     return datetime.now(timezone.utc) - paid < timedelta(days=config.EDIT_WINDOW_DAYS)
 
 
-def render_files(order, resume: Resume):
-    docx_path, _ = output_paths(order)
+def render_files(order, resume: Resume, trim=False):
+    """Writes the Word, PDF and preview files within the 2-page limit. Returns the resume as rendered
+    (with trim=True, an AI-written resume may lose its least important lines to fit)."""
+    docx_path, pdf_path = output_paths(order)
     template = order.get("template") or render.DEFAULT_TEMPLATE
-    render.build(resume.model_dump(), docx_path, template)
-    render.to_previews(render.to_pdf(docx_path))
+    data, _ = render.build_fitted(resume.model_dump(), docx_path, template, trim=trim)
+    resume = Resume.model_validate(data)
+    render.to_previews(pdf_path)
     if order.get("cover_json"):
         cover_docx, _ = cover_paths(order)
         render.build_cover(resume.header.model_dump(), json.loads(order["cover_json"]), cover_docx, template,
                            datetime.now().strftime("%d %B %Y"))
         render.to_pdf(cover_docx)
+    return resume
 
 
 # ------------------------------------------------------------------ generation
@@ -174,7 +178,7 @@ def run_generation(order_id, instructions="", part="all"):
             db.update(order_id, **updates)
         if do_resume:
             db.update(order_id, progress="Creating your Word and PDF files")
-            render_files(db.get_by_id(order_id), resume)
+            resume = render_files(db.get_by_id(order_id), resume, trim=True)
             db.update(order_id, resume_json=resume.model_dump_json(), notes_json=json.dumps(notes))
         db.update(order_id, status="ready", progress="")
         if first_time:

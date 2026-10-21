@@ -105,7 +105,7 @@ Quality:
 - Dates as "Mon YYYY - Mon YYYY" or "Mon YYYY - Present".
 - Education: highest first, with grade if given.
 - Certifications & recognitions: certifications and formal awards. Achievements: other standout accomplishments (awards, rankings, publications, talks, patents, notable projects) not already used as bullets. If there are none, use the strongest remaining facts rather than repeating bullets.
-- Length: fits one page for under 5 years of experience, two pages at most otherwise.
+- Length (hard limit): one A4 page for under 5 years of experience, never more than two A4 pages otherwise. Budget for two pages: about 18 to 22 experience bullets in total, at most 4 achievements and 5 certifications. For long careers, keep roles older than 12 to 15 years to one line each or drop their bullets, rather than going over two pages.
 - Indian conventions are fine (Rs, lakh, crore) when the source uses them. Use plain text only, no markdown."""
 
 VERIFY_SYSTEM = """You are the quality checker for a paid resume-writing service. You receive the candidate's fact bank, the job description and a draft resume whose bullets cite fact ids. Return the final, corrected resume.
@@ -114,7 +114,7 @@ Check every line:
 1. Truth: each claim, number, tool, title, date, employer and qualification must be supported by the fact bank. Remove or rewrite anything unsupported, including in the summary, headline and competencies. Numbers must match the source exactly.
 2. Fit: the strongest job-relevant facts are used and ordered first; must-have keywords appear wherever they are honestly supported.
 3. Writing: no repeated opening verbs within a role, no cliches, no first person, no filler, consistent tense and date format, no spelling or grammar errors, plain text only.
-4. Format: sections complete; bullet counts and length follow the rules (one page under 5 years of experience, at most two pages otherwise).
+4. Format: sections complete; bullet counts and length follow the rules (one page under 5 years of experience, never more than two A4 pages otherwise: about 18 to 22 experience bullets in total; shorten or cut the weakest and oldest lines if it runs longer).
 
 List each correction you made. Keep the gap notes that still apply and add any new ones. Do not add anything that is not in the fact bank."""
 
