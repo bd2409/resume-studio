@@ -326,6 +326,16 @@ def dev_pay(token: str, background: BackgroundTasks):
     return RedirectResponse(f"/order/{token}", status_code=303)
 
 
+@app.post("/order/{token}/owner-pay")
+def owner_pay(token: str, background: BackgroundTasks, creds: HTTPBasicCredentials = Depends(HTTPBasic())):
+    """Lets the site owner run an order without payment (tests, or clients who paid directly)."""
+    admin_auth(creds)
+    order = load_order(token)
+    if db.mark_paid(order["id"], "owner_" + secrets.token_hex(4)):
+        start_generation(background, order["id"])
+    return RedirectResponse(f"/order/{token}", status_code=303)
+
+
 @app.post("/webhooks/razorpay")
 async def razorpay_webhook(request: Request, background: BackgroundTasks):
     raw = (await request.body()).decode()

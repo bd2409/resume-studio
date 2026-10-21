@@ -27,6 +27,11 @@
     {% else %}
       <div class="alert err">Payments are temporarily unavailable. Please try again later.</div>
     {% endif %}
+    {% if not dev_skip %}
+    <form method="post" action="/order/{{ order.token }}/owner-pay" style="margin-top:14px;text-align:center">
+      <button style="background:none;border:0;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer">Site owner: continue without payment</button>
+    </form>
+    {% endif %}
     <p style="font-size:13px;color:var(--muted);margin-top:18px">Bookmark this page to come back to your order: it's your private order link.</p>
   </div>
 </div>
