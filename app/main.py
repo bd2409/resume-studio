@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import Depends
 
-from . import ai, config, db, mailer, payments, render
+from . import ai, auth, config, db, mailer, payments, render
 from .profile import PROFILE
 from .schemas import Profile, Resume
 
@@ -37,7 +37,17 @@ _running = set()
 
 # ------------------------------------------------------------------ helpers
 
+def current_user(request):
+    return auth.read_cookie(request.cookies.get(auth.COOKIE)) if auth.enabled() else None
+
+
+def current_user_email(request):
+    user = current_user(request)
+    return user["email"] if user else None
+
+
 def page(request, name, **ctx):
+    ctx.setdefault("user", current_user(request))
     return templates.TemplateResponse(request, name, ctx)
 
 
@@ -49,6 +59,12 @@ def output_paths(order):
     safe = re.sub(r"[^A-Za-z0-9]+", "_", order["customer_name"]).strip("_") or "Resume"
     d = order_dir(order["id"])
     return d / f"{safe}_Resume.docx", d / f"{safe}_Resume.pdf"
+
+
+def cover_paths(order):
+    docx_path, _ = output_paths(order)
+    stem = docx_path.with_name(docx_path.name.replace("_Resume.docx", "_Cover_Letter.docx"))
+    return stem, stem.with_suffix(".pdf")
 
 
 def load_order(token):
@@ -67,8 +83,14 @@ def editable(order):
 
 def render_files(order, resume: Resume):
     docx_path, _ = output_paths(order)
-    render.build(resume.model_dump(), docx_path, order.get("template") or render.DEFAULT_TEMPLATE)
+    template = order.get("template") or render.DEFAULT_TEMPLATE
+    render.build(resume.model_dump(), docx_path, template)
     render.to_previews(render.to_pdf(docx_path))
+    if order.get("cover_json"):
+        cover_docx, _ = cover_paths(order)
+        render.build_cover(resume.header.model_dump(), json.loads(order["cover_json"]), cover_docx, template,
+                           datetime.now().strftime("%d %B %Y"))
+        render.to_pdf(cover_docx)
 
 
 # ------------------------------------------------------------------ generation
@@ -84,7 +106,7 @@ def run_generation(order_id, instructions=""):
         if config.AI_MODE == "mock":
             time.sleep(2)
             resume, notes = ai.mock_generate()
-            profile = None
+            cover = None if order["cover_json"] else ai.mock_cover_letter(resume)
         else:
             if order["profile_json"]:
                 profile = Profile.model_validate_json(order["profile_json"])
@@ -93,8 +115,18 @@ def run_generation(order_id, instructions=""):
                 profile = ai.extract_profile(files)
                 db.update(order_id, profile_json=profile.model_dump_json())
             db.update(order_id, progress="Writing and checking your tailored resume")
-            resume, notes = ai.write_and_verify(profile, order["job_description"], instructions)
+            job = ai.job_brief(order["job_description"], order["target_role"])
+            resume, notes = ai.write_and_verify(profile, job, instructions)
+            cover = None
+            if not order["cover_json"]:
+                db.update(order_id, progress="Writing your cover letter")
+                try:
+                    cover = ai.write_cover_letter(profile, job, resume)
+                except Exception:
+                    log.exception("Cover letter failed for %s", order_id)  # the resume still ships
         db.update(order_id, progress="Creating your Word and PDF files")
+        if cover:
+            db.update(order_id, cover_json=cover.model_dump_json())
         order = db.get_by_id(order_id)
         render_files(order, resume)
         first_time = not order["resume_json"]
@@ -190,6 +222,52 @@ def sitemap():
     return Response(xml, media_type="application/xml")
 
 
+# ------------------------------------------------------------------ accounts
+
+def _safe_next(target):
+    return target if target and target.startswith("/") and not target.startswith("//") else "/account"
+
+
+@app.get("/signin", response_class=HTMLResponse)
+def signin(request: Request, next: str = "/account"):
+    if current_user(request):
+        return RedirectResponse(_safe_next(next), status_code=303)
+    return page(request, "signin.html", next=_safe_next(next), google_enabled=auth.enabled())
+
+
+@app.post("/auth/google")
+async def auth_google(request: Request):
+    """Receives the Google ID token from the sign-in button (same-origin fetch) and starts a session."""
+    body = await request.json()
+    result = auth.verify_google(body.get("credential", "")) if auth.enabled() else None
+    if not result:
+        raise HTTPException(400, "Sign-in failed. Please try again.")
+    email, name = result
+    response = JSONResponse({"next": _safe_next(body.get("next"))})
+    response.set_cookie(auth.COOKIE, auth.make_cookie(email, name), max_age=auth.MAX_AGE, httponly=True,
+                        secure=config.SITE_URL.startswith("https"), samesite="lax")
+    return response
+
+
+@app.get("/signout")
+def signout():
+    response = RedirectResponse("/resume", status_code=303)
+    response.delete_cookie(auth.COOKIE)
+    return response
+
+
+@app.get("/account", response_class=HTMLResponse)
+def account(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/signin?next=/account", status_code=303)
+    orders = [o for o in db.orders_for_email(user["email"]) if o["status"] != "awaiting_payment" or o["user_email"]]
+    for o in orders:
+        o["has_preview"] = (order_dir(o["id"]) / "preview-1.png").exists()
+        o["notes"] = json.loads(o["notes_json"] or "{}")
+    return page(request, "account.html", orders=orders)
+
+
 @app.get("/healthz")
 def healthz():
     return {"ok": True}
@@ -208,15 +286,20 @@ async def build_submit(
     customer_name: str = Form(...),
     email: str = Form(...),
     phone: str = Form(...),
-    job_description: str = Form(...),
+    job_description: str = Form(""),
+    mode: str = Form("tailor"),
+    target_role: str = Form(""),
     consent: str = Form(None),
     template: str = Form(render.DEFAULT_TEMPLATE),
     resumes: list[UploadFile] = File(...),
 ):
     if template not in render.TEMPLATES:
         template = render.DEFAULT_TEMPLATE
+    mode = "improve" if mode == "improve" else "tailor"
+    if mode == "improve":
+        job_description = ""
     form = {"customer_name": customer_name, "email": email, "phone": phone, "job_description": job_description,
-            "template": template}
+            "template": template, "mode": mode, "target_role": target_role}
     resumes = [f for f in resumes if f.filename]
 
     def fail(msg):
@@ -228,8 +311,10 @@ async def build_submit(
         return fail("Please enter a valid email address.")
     if len(re.sub(r"\D", "", phone)) < 10:
         return fail("Please enter a valid phone number.")
-    if len(job_description.strip()) < 150:
+    if mode == "tailor" and len(job_description.strip()) < 150:
         return fail("Please paste the full job description (at least a few lines).")
+    if mode == "improve" and len(target_role.strip()) < 3:
+        return fail("Please tell us the kind of role you're aiming for.")
     if not resumes:
         return fail("Please upload at least one resume.")
     if len(resumes) > config.MAX_RESUMES:
@@ -254,7 +339,8 @@ async def build_submit(
         name = f"resume_{i}{ext}"
         (up / name).write_bytes(data)
         names.append(name)
-    db.update(order["id"], files_json=json.dumps(names), template=template)
+    db.update(order["id"], files_json=json.dumps(names), template=template, target_role=target_role.strip()[:120],
+              user_email=current_user_email(request))
     return RedirectResponse(f"/order/{order['token']}", status_code=303)
 
 
@@ -292,7 +378,8 @@ def order_page(request: Request, token: str):
     resume = Resume.model_validate_json(order["resume_json"])
     notes = json.loads(order["notes_json"] or "{}")
     previews = sorted(order_dir(order["id"]).glob("preview-*.png"))
-    return page(request, "review.html", order=order, resume=resume, notes=notes,
+    cover = json.loads(order["cover_json"]) if order["cover_json"] else None
+    return page(request, "review.html", order=order, resume=resume, notes=notes, cover=cover,
                 pages=len(previews),
                 can_edit=editable(order),
                 regen_left=max(0, config.MAX_REGENERATIONS - order["regenerations"]),
@@ -424,6 +511,12 @@ async def save(token: str, request: Request):
         "certifications": _lines(f.get("certifications")),
         "achievements": _lines(f.get("achievements")),
     })
+    if order["cover_json"] and "cover-body" in f:
+        paragraphs = [x.strip() for x in re.split(r"\n\s*\n", f.get("cover-body") or "") if x.strip()]
+        if paragraphs:
+            order["cover_json"] = json.dumps({"greeting": g("cover-greeting") or "Dear Hiring Manager,",
+                                              "paragraphs": paragraphs, "closing": g("cover-closing") or "Sincerely,"})
+            db.update(order["id"], cover_json=order["cover_json"])
     render_files(order, resume)
     db.update(order["id"], resume_json=resume.model_dump_json(), status="ready")
     return RedirectResponse(f"/order/{token}?saved=1", status_code=303)
@@ -457,12 +550,13 @@ def regenerate(token: str, background: BackgroundTasks, instructions: str = Form
 def download(token: str, kind: str, inline: int = 0):
     order = load_order(token)
     docx_path, pdf_path = output_paths(order)
-    path = {"docx": docx_path, "pdf": pdf_path}.get(kind)
+    cover_docx, cover_pdf = cover_paths(order)
+    path = {"docx": docx_path, "pdf": pdf_path, "cover-docx": cover_docx, "cover-pdf": cover_pdf}.get(kind)
     if not path or not path.exists():
         raise HTTPException(404, "File not found")
-    media = ("application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-             if kind == "docx" else "application/pdf")
-    disposition = "inline" if inline and kind == "pdf" else "attachment"
+    is_pdf = kind.endswith("pdf")
+    media = "application/pdf" if is_pdf else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    disposition = "inline" if inline and is_pdf else "attachment"
     return FileResponse(path, media_type=media, filename=path.name, content_disposition_type=disposition,
                         headers={"Cache-Control": "no-store"})
 

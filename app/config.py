@@ -47,3 +47,8 @@ EMAIL_FROM = os.getenv("EMAIL_FROM", f"{SITE_NAME} <no-reply@example.com>")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 
 FILES_DIR.mkdir(parents=True, exist_ok=True)
+
+# Google sign-in (customer accounts). Create an OAuth "Web application" client ID in Google Cloud Console.
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+# Signs login cookies. Set a long random value in production so logins survive restarts.
+SECRET_KEY = os.getenv("SECRET_KEY", "") or os.getenv("ADMIN_PASSWORD", "") or __import__("secrets").token_hex(32)

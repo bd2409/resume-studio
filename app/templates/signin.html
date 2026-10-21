@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block title %}Sign in | {{ cfg.SITE_NAME }}{% endblock %}
+{% block head %}{% if google_enabled %}<script src="https://accounts.google.com/gsi/client" async></script>{% endif %}{% endblock %}
+{% block content %}
+<section class="block">
+  <div class="wrap narrow" style="max-width:460px">
+    <div class="form-card signin-card">
+      <h1>Welcome back</h1>
+      <p>Sign in to see all your resumes and cover letters in one place.</p>
+      {% if google_enabled %}
+      <div id="g_id_onload" data-client_id="{{ cfg.GOOGLE_CLIENT_ID }}" data-callback="onGoogleSignIn" data-auto_prompt="false"></div>
+      <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="continue_with" data-shape="pill" data-width="320"></div>
+      <div id="signin-error" class="alert err" style="display:none;margin-top:14px"></div>
+      <p class="signin-note">We only use your Google account to confirm your email. Resumes you ordered with the same email appear automatically.</p>
+      {% else %}
+      <div class="alert warn">Accounts are coming soon. Meanwhile, every order has a private link, which we also email to you.</div>
+      {% endif %}
+      <p class="signin-note">New here? <a href="/build">Build your resume</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}{% if google_enabled %}
+<script>
+async function onGoogleSignIn(resp) {
+  const err = document.getElementById('signin-error');
+  const res = await fetch('/auth/google', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential: resp.credential, next: {{ next | tojson }} })
+  });
+  if (res.ok) { location.href = (await res.json()).next; }
+  else { err.textContent = 'Sign-in failed. Please try again.'; err.style.display = 'block'; }
+}
+</script>
+{% endif %}{% endblock %}

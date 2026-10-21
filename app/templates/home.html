@@ -3,31 +3,20 @@
 <section class="hero">
   <div class="wrap">
     <div>
-      <span class="eyebrow">Tailored for every job you apply to</span>
-      <h1>A resume written for the job you want, built from the career you've actually had.</h1>
-      <p class="lead">Upload up to {{ cfg.MAX_RESUMES }} of your existing resumes and paste the job description. In a few minutes you get a polished, ATS-friendly resume in Word and PDF, matched to that role.</p>
+      <span class="eyebrow">Resume + cover letter · Rs {{ cfg.PRICE_RUPEES }} once · no subscription</span>
+      <h1>Your job-winning resume, written for you in minutes.</h1>
+      <p class="lead">Upload your existing resumes. We turn your real experience into a polished, ATS-friendly resume and a matching cover letter, tailored to the job you want. Editable Word and PDF.</p>
       <div class="cta-row">
-        <a class="btn big" href="/build">Build my resume for Rs {{ cfg.PRICE_RUPEES }}</a>
-        <a class="btn big light" href="/static/sample-resume.pdf" target="_blank">See a sample</a>
+        <a class="btn big" href="/build?mode=tailor">Tailor to a job</a>
+        <a class="btn big light" href="/build?mode=improve">Improve my resume</a>
       </div>
-      <p class="price-note">One-time payment. Editable Word file + PDF. Free edits for {{ cfg.EDIT_WINDOW_DAYS }} days.</p>
+      <p class="price-note">One-time payment of Rs {{ cfg.PRICE_RUPEES }}. No trial, no auto-renewal. Free edits and design changes for {{ cfg.EDIT_WINDOW_DAYS }} days.</p>
     </div>
-    <div class="hero-card" aria-hidden="true">
-      <div class="mini-resume">
-        <div class="n">YOUR NAME</div>
-        <div class="h">Headline matched to the role</div>
-        <div class="c">email | phone | linkedin | location</div>
-        <div class="s">PROFESSIONAL SUMMARY</div>
-        <div class="l w90"></div><div class="l"></div><div class="l w60"></div>
-        <div class="s">KEY COMPETENCIES</div>
-        <div class="l w80"></div><div class="l w60"></div>
-        <div class="s">PROFESSIONAL EXPERIENCE</div>
-        <div class="l w90"></div><div class="l"></div><div class="l w80"></div><div class="l w60"></div>
-        <div class="s">EDUCATION</div>
-        <div class="l w60"></div>
-        <div class="s">CERTIFICATIONS &amp; RECOGNITIONS</div>
-        <div class="l w80"></div>
-      </div>
+    <div class="hero-stack" aria-hidden="true">
+      {% for key in ['minimal', 'modern', 'executive', 'classic'] %}
+      <img src="/static/templates/{{ key }}.png" alt="" class="s{{ loop.index }}">
+      {% endfor %}
+      <div class="hero-badge"><strong>87%</strong><span>job match</span></div>
     </div>
   </div>
 </section>
@@ -40,9 +29,9 @@
     </div>
     <div class="grid four">
       <div class="card"><div class="step-num">1</div><h3>Upload your resumes</h3><p>Add up to {{ cfg.MAX_RESUMES }} past resumes (PDF or Word). More versions give us more of your real achievements to work with.</p></div>
-      <div class="card"><div class="step-num">2</div><h3>Paste the job description</h3><p>Copy the full job posting you're applying for, so we can match its skills and keywords.</p></div>
+      <div class="card"><div class="step-num">2</div><h3>Add the job, pick a design</h3><p>Paste the job posting (or just name the role you want) and choose one of {{ resume_templates | length }} designs.</p></div>
       <div class="card"><div class="step-num">3</div><h3>Pay Rs {{ cfg.PRICE_RUPEES }}</h3><p>Secure payment by UPI, card, netbanking or wallet through Cashfree Payments.</p></div>
-      <div class="card"><div class="step-num">4</div><h3>Review and download</h3><p>Check your tailored resume, edit any line, and download it as Word and PDF.</p></div>
+      <div class="card"><div class="step-num">4</div><h3>Review and download</h3><p>See your job-match score, edit any line, switch designs, and download your resume and cover letter.</p></div>
     </div>
   </div>
 </section>
@@ -64,20 +53,37 @@
   </div>
 </section>
 
-<section class="block">
+<section class="block" id="templates">
   <div class="wrap">
     <div class="section-title">
-      <h2>Every resume follows the same proven structure</h2>
-      <p>A fixed, recruiter-friendly format. Only the content changes for each job.</p>
+      <h2>Pick a design. Switch anytime.</h2>
+      <p>Every design is a clean, single-column layout that applicant tracking systems read correctly.</p>
     </div>
-    <div class="grid three">
-      <div class="card"><h3>Header</h3><p>Name, headline, email, phone, LinkedIn and location.</p></div>
-      <div class="card"><h3>Professional summary</h3><p>Three to four sentences that make the case for this role.</p></div>
-      <div class="card"><h3>Key competencies</h3><p>Nine to twelve skills, ordered by what the job values most.</p></div>
-      <div class="card"><h3>Professional experience</h3><p>Your roles with achievement-focused, quantified bullets.</p></div>
-      <div class="card"><h3>Education</h3><p>Degrees and institutions, highest first.</p></div>
-      <div class="card"><h3>Certifications, recognitions &amp; achievements</h3><p>The credentials and wins that set you apart.</p></div>
+    <div class="gallery">
+      {% for key, t in resume_templates.items() %}
+      <a class="gallery-item" href="/build?template={{ key }}">
+        <img src="/static/templates/{{ key }}.png" alt="{{ t.label }} resume template" loading="lazy">
+        <div><strong>{{ t.label }}</strong><span>Use this design →</span></div>
+      </a>
+      {% endfor %}
     </div>
+  </div>
+</section>
+
+<section class="block soft">
+  <div class="wrap narrow">
+    <div class="section-title">
+      <h2>Pay once. Keep it forever.</h2>
+      <p>Most resume builders charge a monthly subscription that renews until you cancel. We don't.</p>
+    </div>
+    <table class="compare">
+      <tr><th></th><th>{{ cfg.SITE_NAME }}</th><th>Typical resume builders</th></tr>
+      <tr><td>Price</td><td><strong>Rs {{ cfg.PRICE_RUPEES }}, one time</strong></td><td>Monthly subscription after a trial</td></tr>
+      <tr><td>Who writes it</td><td>Done for you, from your real resumes</td><td>You write it, with suggestions</td></tr>
+      <tr><td>Tailored to the job</td><td>Yes, with a job-match score</td><td>Mostly manual</td></tr>
+      <tr><td>Cover letter</td><td>Included</td><td>Often extra</td></tr>
+      <tr><td>Your files</td><td>Editable Word + PDF, yours to keep</td><td>Download needs an active plan</td></tr>
+    </table>
   </div>
 </section>
 

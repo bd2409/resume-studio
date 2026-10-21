@@ -12,8 +12,8 @@ from pathlib import Path
 import anthropic
 from docx import Document
 
-from . import config
-from .schemas import Draft, Profile, Resume, Verified
+from . import config, render
+from .schemas import CoverLetter, Draft, Profile, Resume, Verified
 
 _client = None
 
@@ -40,10 +40,11 @@ def _docx_text(path):
 
 def _convert_with_libreoffice(path, fmt):
     out_dir = tempfile.mkdtemp()
-    subprocess.run(
-        ["soffice", "--headless", "--convert-to", fmt, "--outdir", out_dir, str(path)],
-        check=True, capture_output=True, timeout=120,
-    )
+    with render._soffice_lock:
+        subprocess.run(
+            ["soffice", "--headless", "--convert-to", fmt, "--outdir", out_dir, str(path)],
+            check=True, capture_output=True, timeout=120,
+        )
     return next(Path(out_dir).glob(f"*.{fmt}"))
 
 
@@ -118,6 +119,37 @@ Check every line:
 List each correction you made. Keep the gap notes that still apply and add any new ones. Do not add anything that is not in the fact bank."""
 
 
+COVER_SYSTEM = """You write cover letters for a paid resume service. You receive the candidate's fact bank, the job description (or just a target role) and their final tailored resume. Write a cover letter for this application.
+
+Rules:
+- 250 to 350 words in 3 or 4 paragraphs: why this role and company (only what the job description says about them), two or three of the most relevant quantified achievements, how they fit the must-have requirements, and a short confident close.
+- Use only facts from the fact bank and the resume. Never invent experience, numbers, tools or knowledge of the company that is not in the job description.
+- Specific, warm and professional. No cliches ("I am writing to express", "results-driven", "passionate"), no flattery, no repeating the resume line by line.
+- Address the company by name only if the job description names it; otherwise use "Dear Hiring Manager,".
+- Plain text only, no placeholders such as [Company]."""
+
+
+def job_brief(job_description: str, target_role: str = ""):
+    """The job text the writer works from. Without a posting, the writer optimises for the target role in general."""
+    if job_description.strip():
+        return job_description
+    role = target_role.strip() or "the candidate's current career direction"
+    return (f"No specific job posting was provided. Target role: {role}. "
+            "Improve the resume for this kind of role in general: infer the skills and keywords that typical postings "
+            "for it in India require, and present the candidate's real experience as strongly as possible for it.")
+
+
+def match_score(must_have, covered):
+    """Share of the job's must-have keywords that the final resume covers."""
+    must = {k.strip().lower() for k in must_have if k.strip()}
+    have = {k.strip().lower() for k in covered}
+    if not must:
+        return None
+    hit = must & have
+    return {"covered": len(hit), "total": len(must), "percent": round(100 * len(hit) / len(must)),
+            "missing": sorted(k for k in must_have if k.strip().lower() in must - hit)}
+
+
 def _call(system, content, schema, effort):
     response = client().messages.parse(
         model=config.AI_MODEL,
@@ -164,9 +196,20 @@ def write_and_verify(profile: Profile, job_description: str, instructions: str =
         "gap_notes": verified.gap_notes,
         "corrections": verified.corrections,
         "keyword_coverage": verified.keyword_coverage,
+        "match": match_score(draft.must_have_keywords, verified.keyword_coverage),
         "conflicts": profile.conflicts,
     }
     return verified.resume, notes
+
+
+def write_cover_letter(profile: Profile, job_description: str, resume: Resume):
+    return _call(
+        COVER_SYSTEM,
+        f"<fact_bank>\n{profile.model_dump_json(indent=1)}\n</fact_bank>\n\n<job_description>\n{job_description}\n</job_description>\n\n"
+        f"<resume>\n{resume.model_dump_json(indent=1)}\n</resume>",
+        CoverLetter,
+        effort="medium",
+    )
 
 
 # ---------------------------------------------------------------- mock mode for local testing
@@ -181,6 +224,19 @@ def mock_generate():
         "gap_notes": ["This is sample content. Set ANTHROPIC_API_KEY to generate real resumes."],
         "corrections": [],
         "keyword_coverage": [],
+        "match": {"covered": 13, "total": 15, "percent": 87, "missing": ["Power BI", "Kafka"]},
         "conflicts": [],
     }
     return resume, notes
+
+
+def mock_cover_letter(resume: Resume):
+    return CoverLetter(
+        greeting="Dear Hiring Manager,",
+        paragraphs=[
+            "This is a sample cover letter, shown because the AI is not connected yet.",
+            f"With the AI connected, this letter is written from {resume.header.name}'s real experience and the job description, in 250 to 350 words.",
+            "It highlights the most relevant achievements and closes with a short, confident note.",
+        ],
+        closing="Sincerely,",
+    )

@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS orders (
     notes_json      TEXT,
     profile_json    TEXT,
     template        TEXT NOT NULL DEFAULT 'classic',
+    target_role     TEXT NOT NULL DEFAULT '',
+    cover_json      TEXT,
+    user_email      TEXT,
     updated_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS orders_rzp ON orders (rzp_order_id);
@@ -54,8 +57,10 @@ def init():
     with conn() as c:
         c.executescript(SCHEMA)
         cols = {r["name"] for r in c.execute("PRAGMA table_info(orders)")}
-        if "template" not in cols:
-            c.execute("ALTER TABLE orders ADD COLUMN template TEXT NOT NULL DEFAULT 'classic'")
+        for col, ddl in (("template", "TEXT NOT NULL DEFAULT 'classic'"), ("target_role", "TEXT NOT NULL DEFAULT ''"),
+                         ("cover_json", "TEXT"), ("user_email", "TEXT")):
+            if col not in cols:
+                c.execute(f"ALTER TABLE orders ADD COLUMN {col} {ddl}")
 
 
 def create_order(customer_name, email, phone, job_description, files, amount_paise):
@@ -130,3 +135,13 @@ def purge_content(order_id):
             " profile_json = NULL, notes_json = NULL, updated_at = ? WHERE id = ?",
             (now(), order_id),
         )
+
+
+def orders_for_email(email):
+    """Every order placed with this email or while signed in as it, newest first."""
+    with conn() as c:
+        rows = c.execute(
+            "SELECT * FROM orders WHERE lower(email) = ? OR user_email = ? ORDER BY created_at DESC",
+            (email.lower(), email.lower()),
+        ).fetchall()
+    return [dict(r) for r in rows]

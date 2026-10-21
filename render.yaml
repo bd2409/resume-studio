@@ -26,6 +26,10 @@ services:
         value: "500"
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
       - key: CASHFREE_APP_ID
         sync: false
       - key: CASHFREE_SECRET_KEY

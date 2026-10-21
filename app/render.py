@@ -24,6 +24,7 @@ TEMPLATES = {
     "minimal": {"label": "Minimal", "font": "Arial", "accent": "222222", "align": "left", "titles": "plain", "name_size": 18},
 }
 DEFAULT_TEMPLATE = "classic"
+_soffice_lock = threading.Lock()
 _lock = threading.Lock()  # the active theme is module state, so builds run one at a time
 
 FONT = "Calibri"
@@ -220,13 +221,45 @@ def _build(data, out):
     doc.save(out)
 
 
+def build_cover(header_data, letter, out, template=DEFAULT_TEMPLATE, date_text=""):
+    """Cover letter in the same design as the resume, so the two look like a set."""
+    with _lock:
+        use_template(template)
+        doc = Document()
+        set_base_styles(doc)
+        doc.styles["Normal"].font.size = Pt(11)
+        for sec in doc.sections:
+            sec.top_margin = sec.bottom_margin = Cm(2.0)
+            sec.left_margin = sec.right_margin = Cm(2.2)
+        header(doc, header_data)
+        spaced = dict(space_after=Pt(10))
+        if date_text:
+            p = doc.add_paragraph(date_text)
+            p.paragraph_format.space_before = Pt(14)
+            p.paragraph_format.space_after = Pt(10)
+        p = doc.add_paragraph(letter["greeting"])
+        p.paragraph_format.space_after = spaced["space_after"]
+        for para in letter["paragraphs"]:
+            p = doc.add_paragraph(para)
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            p.paragraph_format.space_after = spaced["space_after"]
+            p.paragraph_format.line_spacing = 1.15
+        doc.add_paragraph(letter["closing"]).paragraph_format.space_after = Pt(2)
+        run(doc.add_paragraph(), header_data["name"], bold=True)
+        doc.core_properties.title = f"{header_data['name']} - Cover Letter"
+        doc.core_properties.author = header_data["name"]
+        doc.save(out)
+
+
 def to_pdf(docx_path):
     """Convert with LibreOffice so the PDF matches the Word file exactly."""
     docx_path = Path(docx_path)
-    subprocess.run(
-        ["soffice", "--headless", "--convert-to", "pdf", "--outdir", str(docx_path.parent), str(docx_path)],
-        check=True, capture_output=True, timeout=180,
-    )
+    # LibreOffice can't run two conversions on one profile at once, so conversions take turns.
+    with _soffice_lock:
+        subprocess.run(
+            ["soffice", "--headless", "--convert-to", "pdf", "--outdir", str(docx_path.parent), str(docx_path)],
+            check=True, capture_output=True, timeout=180,
+        )
     return docx_path.with_suffix(".pdf")
 
 

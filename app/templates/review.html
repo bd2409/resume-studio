@@ -5,8 +5,8 @@
 {% block content %}
 <div class="wrap">
   <div class="page-head">
-    <h1>Your tailored resume is ready</h1>
-    <p>{% if notes.target_role %}Tailored for: <strong>{{ notes.target_role }}</strong>. {% endif %}Review it, edit anything you like, then download.</p>
+    <h1>Your resume is ready</h1>
+    <p>{% if notes.target_role %}Written for: <strong>{{ notes.target_role }}</strong>. {% endif %}Review it, edit anything you like, then download.</p>
   </div>
 
   <div style="margin:18px 0">
@@ -35,6 +35,26 @@
     </div>
 
     <div>
+      {% if notes.match and order.job_description %}
+      <div class="match-card">
+        <div class="match-ring" style="--p: {{ notes.match.percent }}"><span>{{ notes.match.percent }}%</span></div>
+        <div>
+          <strong>Job match</strong>
+          <p>Your resume covers {{ notes.match.covered }} of the {{ notes.match.total }} key requirements we found in the job description{% if notes.match.missing %}. Not covered: {{ notes.match.missing | join(', ') }}{% endif %}.</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if cover %}
+      <div class="card cover-card">
+        <strong>Your cover letter</strong>
+        <p>Written for the same role, in the same design as your resume.</p>
+        <div class="download-row" style="margin:8px 0 0">
+          <a class="btn small" href="/order/{{ order.token }}/download/cover-docx">Word</a>
+          <a class="btn small light" href="/order/{{ order.token }}/download/cover-pdf">PDF</a>
+          {% if can_edit %}<a class="btn small light" href="#cover-edit">Edit</a>{% endif %}
+        </div>
+      </div>
+      {% endif %}
       {% if notes.gap_notes %}
       <div class="alert warn notes">
         <strong>Worth checking:</strong> the job asks for these, but your resumes don't show them. Add them only if they're true.
@@ -126,6 +146,16 @@
           <label><span class="hint">One per line</span></label>
           <textarea name="achievements" rows="4">{{ lines(resume.achievements) }}</textarea>
         </fieldset>
+
+        {% if cover %}
+        <fieldset id="cover-edit">
+          <legend>Cover letter</legend>
+          <label>Greeting</label><input type="text" name="cover-greeting" value="{{ cover.greeting }}">
+          <label>Letter <span class="hint">(leave a blank line between paragraphs)</span></label>
+          <textarea name="cover-body" rows="14">{{ cover.paragraphs | join('\n\n') }}</textarea>
+          <label>Closing</label><input type="text" name="cover-closing" value="{{ cover.closing }}">
+        </fieldset>
+        {% endif %}
 
         <div class="sticky-save">
           <button class="btn" type="submit">Save changes and update files</button>

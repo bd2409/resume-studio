@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block title %}My resumes | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-head account-head">
+    <div>
+      <h1>My resumes</h1>
+      <p>Signed in as {{ user.email }} · <a href="/signout">Sign out</a></p>
+    </div>
+    <a class="btn big" href="/build">+ New resume</a>
+  </div>
+  {% if orders %}
+  <div class="doc-grid">
+    {% for o in orders %}
+    <a class="doc-card" href="/order/{{ o.token }}">
+      <div class="doc-thumb">
+        {% if o.has_preview %}<img src="/order/{{ o.token }}/preview/1.png" alt="" loading="lazy">
+        {% else %}<span>{{ {'awaiting_payment': 'Awaiting payment', 'paid': 'Writing...', 'generating': 'Writing...', 'failed': 'Needs attention'}.get(o.status, '') }}</span>{% endif %}
+      </div>
+      <div class="doc-meta">
+        <strong>{{ o.notes.target_role or o.target_role or 'Resume' }}</strong>
+        <span>{{ o.created_at[:10] }} · {{ resume_templates.get(o.template or 'classic', {}).get('label', '') }}{% if o.notes.match %} · {{ o.notes.match.percent }}% match{% endif %}</span>
+        {% if o.cover_json %}<span class="doc-tag">+ Cover letter</span>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:40px;margin-bottom:60px">
+    <h3>No resumes yet</h3>
+    <p>Orders you place with {{ user.email }} will show up here.</p>
+    <a class="btn" href="/build">Build my first resume</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

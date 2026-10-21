@@ -102,3 +102,9 @@ class Verified(BaseModel):
     corrections: List[str] = Field(description="Each change made during the check and why")
     gap_notes: List[str]
     keyword_coverage: List[str] = Field(description="Must-have keywords that now appear in the resume")
+
+
+class CoverLetter(BaseModel):
+    greeting: str = Field(description="For example 'Dear Hiring Manager,' or 'Dear Hiring Team at <Company>,'")
+    paragraphs: List[str] = Field(description="3 or 4 paragraphs, plain text")
+    closing: str = Field(description="For example 'Sincerely,'")
