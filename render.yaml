@@ -13,13 +13,13 @@ services:
       - key: SITE_NAME
         value: Resume Studio
       - key: SITE_URL
-        sync: false
+        value: https://bhargabdas.in
       - key: CONTACT_EMAIL
-        sync: false
+        value: bhargabdas247@gmail.com
       - key: CONTACT_PHONE
         sync: false
       - key: BUSINESS_ADDRESS
-        sync: false
+        value: Gurugram, Haryana, India
       - key: OWNER_NAME
         value: Bhargab
       - key: PRICE_RUPEES
@@ -37,6 +37,6 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
-        sync: false
+        value: Resume Studio <orders@bhargabdas.in>
       - key: ADMIN_PASSWORD
         generateValue: true

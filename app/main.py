@@ -232,7 +232,7 @@ def order_page(request: Request, token: str):
     order = load_order(token)
     status = order["status"]
     if status == "awaiting_payment":
-        return page(request, "pay.html", order=order, razorpay=payments.enabled(),
+        return page(request, "pay.html", order=order, razorpay=payments.enabled() and config.AI_MODE == "live",
                     dev_skip=config.DEV_SKIP_PAYMENT, file_count=len(json.loads(order["files_json"])))
     if status in ("paid", "generating"):
         return page(request, "progress.html", order=order)
@@ -259,7 +259,8 @@ def checkout(token: str):
     order = load_order(token)
     if order["status"] != "awaiting_payment":
         return JSONResponse({"paid": True})
-    if not payments.enabled():
+    if not payments.enabled() or config.AI_MODE != "live":
+        # Never take money while the AI is not connected.
         raise HTTPException(400, "Payments are not configured")
     rzp_order_id = order["rzp_order_id"] or payments.create_order(order)
     db.update(order["id"], rzp_order_id=rzp_order_id)
