@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -161,6 +161,32 @@ def _static_page(template):
 
 for _path, _template in STATIC_PAGES.items():
     app.add_api_route(_path, _static_page(_template), methods=["GET"], response_class=HTMLResponse)
+
+
+PUBLIC_PAGES = ["/", "/resume", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy"]
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+def robots():
+    return (
+        "User-agent: *\n"
+        "Disallow: /order/\n"
+        "Disallow: /admin\n"
+        "Disallow: /webhooks/\n"
+        f"Sitemap: {config.SITE_URL}/sitemap.xml\n"
+    )
+
+
+@app.get("/sitemap.xml")
+def sitemap():
+    today = datetime.now(timezone.utc).date().isoformat()
+    urls = "".join(
+        f"<url><loc>{config.SITE_URL}{path}</loc><lastmod>{today}</lastmod>"
+        f"<priority>{'1.0' if path in ('/', '/resume') else '0.5'}</priority></url>"
+        for path in PUBLIC_PAGES
+    )
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    return Response(xml, media_type="application/xml")
 
 
 @app.get("/healthz")

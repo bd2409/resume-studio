@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 {% block title %}Your resume | {{ cfg.SITE_NAME }}{% endblock %}
 {% macro lines(items) %}{{ items | join('\n') }}{% endmacro %}
 {% block content %}

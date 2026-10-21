@@ -9,6 +9,9 @@ def _bool(name, default=False):
 
 SITE_NAME = os.getenv("SITE_NAME", "Resume Studio")
 SITE_URL = os.getenv("SITE_URL", "http://localhost:8000").rstrip("/")
+# Optional HTML-tag verification codes for Google Search Console and Bing Webmaster Tools
+GOOGLE_SITE_VERIFICATION = os.getenv("GOOGLE_SITE_VERIFICATION", "")
+BING_SITE_VERIFICATION = os.getenv("BING_SITE_VERIFICATION", "")
 OWNER_NAME = os.getenv("OWNER_NAME", "Bhargab")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "hello@example.com")
 CONTACT_PHONE = os.getenv("CONTACT_PHONE", "")

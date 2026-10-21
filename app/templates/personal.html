@@ -3,10 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ me.name }} | Marketing strategist for startups</title>
+  <title>{{ me.name }} | Marketing strategist for startups in India</title>
   <meta name="description" content="{{ me.tagline }}">
   <meta property="og:title" content="{{ me.name }}">
   <meta property="og:description" content="{{ me.tagline }}">
+  {% include "_seo.html" %}
+  <script type="application/ld+json">
+  {{ {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": me.name,
+    "url": cfg.SITE_URL ~ "/",
+    "image": cfg.SITE_URL ~ me.photo,
+    "jobTitle": me.headline,
+    "description": me.tagline,
+    "email": "mailto:" ~ me.email,
+    "address": {"@type": "PostalAddress", "addressLocality": "Gurugram", "addressRegion": "Haryana", "addressCountry": "IN"},
+    "alumniOf": ["Malaviya National Institute of Technology, Jaipur", "Symbiosis Institute of International Business", "Indian Institute of Management Lucknow"],
+    "knowsAbout": ["Marketing strategy", "Brand identity", "Performance marketing", "Digital marketing", "E-commerce", "Go-to-market strategy", "Website building", "Packaging design"],
+    "sameAs": [me.linkedin, me.instagram]
+  } | tojson }}
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
