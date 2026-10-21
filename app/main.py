@@ -323,7 +323,10 @@ def account(request: Request):
 
 @app.get("/healthz")
 def healthz():
-    return {"ok": True}
+    # Setup status without any secret values, so the owner can see why checkout is hidden.
+    return {"ok": True, "ai_connected": config.AI_MODE == "live", "cashfree_keys_set": payments.enabled(),
+            "cashfree_mode": payments.mode(), "checkout_for_everyone": payments.enabled() and config.AI_MODE == "live"
+            and payments.mode() == "production"}
 
 
 # ------------------------------------------------------------------ order flow
