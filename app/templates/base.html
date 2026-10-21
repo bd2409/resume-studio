@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=5">
+  <link rel="stylesheet" href="/static/style.css?v=6">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f3a5f'/><text x='16' y='22' font-size='17' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>R</text></svg>">
   <meta property="og:title" content="{{ self.title() }}">
   <meta property="og:description" content="{{ self.description() }}">
@@ -25,8 +25,8 @@
       <a href="/">About {{ me.name.split()[0] }}</a>
       <a href="/services">Services</a>
       <a href="/free">Free tools</a>
+      <a href="/blog">Blog</a>
       <a href="/pricing">Pricing</a>
-      <a href="/faq">FAQ</a>
       <a href="/contact">Contact</a>
       {% if user %}<a href="/account">My resumes</a>{% elif cfg.GOOGLE_CLIENT_ID %}<a href="/signin">Sign in</a>{% endif %}
       <a class="btn small" href="/build">Build my resume</a>
@@ -47,6 +47,7 @@
       <a href="/build">Build my resume</a>
       <a href="/resume#how">How it works</a>
       <a href="/services">All services</a>
+      <a href="/blog">Career guides</a>
       <a href="/free/resume-check">Free resume check</a>
       <a href="/free/playbook">Free 35+ playbook</a>
       <a href="/book/claude">Learn Claude 1:1</a>

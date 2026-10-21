@@ -1,7 +1,21 @@
 <link rel="canonical" href="{{ cfg.SITE_URL }}{{ request.url.path }}">
 <meta property="og:url" content="{{ cfg.SITE_URL }}{{ request.url.path }}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="{{ og_type or 'website' }}">
+<meta property="og:site_name" content="{{ cfg.SITE_NAME }}">
+<meta property="og:locale" content="en_IN">
 <meta property="og:image" content="{{ cfg.SITE_URL }}{{ me.photo }}">
 <meta name="twitter:card" content="summary">
 {% if cfg.GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ cfg.GOOGLE_SITE_VERIFICATION }}">{% endif %}
 {% if cfg.BING_SITE_VERIFICATION %}<meta name="msvalidate.01" content="{{ cfg.BING_SITE_VERIFICATION }}">{% endif %}
+<script type="application/ld+json">{{ {
+  "@context": "https://schema.org",
+  "@graph": [
+    {"@type": "WebSite", "@id": cfg.SITE_URL ~ "/#website", "url": cfg.SITE_URL ~ "/", "name": cfg.SITE_NAME, "inLanguage": "en-IN",
+     "publisher": {"@id": cfg.SITE_URL ~ "/#org"}},
+    {"@type": "ProfessionalService", "@id": cfg.SITE_URL ~ "/#org", "name": cfg.SITE_NAME, "url": cfg.SITE_URL ~ "/resume",
+     "image": cfg.SITE_URL ~ me.photo, "email": cfg.CONTACT_EMAIL, "areaServed": "IN", "priceRange": "Rs 299 - Rs " ~ cfg.PRICE_AUDIT,
+     "address": {"@type": "PostalAddress", "addressLocality": cfg.BUSINESS_ADDRESS, "addressCountry": "IN"},
+     "founder": {"@type": "Person", "name": me.name, "url": cfg.SITE_URL ~ "/", "sameAs": [me.linkedin]},
+     "description": "Job-tailored, ATS-friendly resumes and cover letters written from your own experience, LinkedIn makeovers, interview and salary preparation, Claude AI coaching and startup marketing audits."}
+  ]
+} | tojson }}</script>

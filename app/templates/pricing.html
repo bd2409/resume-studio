@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Pricing | {{ cfg.SITE_NAME }}{% endblock %}
+{% block title %}Resume writing price in India: Rs {{ cfg.PRICE_RUPEES }} | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}A tailored, ATS-friendly resume and cover letter for Rs {{ cfg.PRICE_RUPEES }}, LinkedIn makeover Rs {{ cfg.PRICE_LINKEDIN }}, bundle Rs {{ '{:,}'.format(cfg.PRICE_BUNDLE) }}. One-time payment, no subscription.{% endblock %}
 {% block content %}
 <section class="block soft">
   <div class="wrap">

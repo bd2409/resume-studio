@@ -306,3 +306,35 @@ table.compare td:nth-child(2) { background: #f1f8f4; }
 .addon-list strong { font-size: 15px; }
 .addon-list span { color: var(--muted); font-size: 13px; display: block; }
 .premium-note { border-left: 4px solid var(--accent); }
+
+/* Blog */
+.blog-h1 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 10px; color: var(--navy-dark); letter-spacing: -0.5px; }
+.blog-cats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: -20px 0 30px; }
+.blog-cats a { border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 14px; background: #fff; text-decoration: none; }
+.blog-cat { font-size: 22px; color: var(--navy-dark); margin: 34px 0 14px; }
+.blog-card { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; transition: box-shadow .15s; }
+.blog-card:hover { box-shadow: var(--shadow); }
+.blog-card h3 { font-size: 17px; line-height: 1.35; }
+.blog-meta { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.blog-more { margin-top: auto; padding-top: 8px; font-weight: 600; color: var(--navy); font-size: 14px; }
+.blog-post { padding-top: 26px; }
+.blog-post h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.2; color: var(--navy-dark); margin: 10px 0; letter-spacing: -0.5px; }
+.blog-post table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 15px; }
+.blog-post th, .blog-post td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+.blog-post th { background: #f1f4f8; }
+.blog-post blockquote { margin: 14px 0; padding: 12px 16px; background: #f6f8fb; border-left: 4px solid var(--navy); border-radius: 6px; }
+.blog-post blockquote p { margin: 4px 0; }
+.blog-post code { background: #f1f4f8; padding: 1px 5px; border-radius: 4px; }
+.crumbs { font-size: 13px; color: var(--muted); }
+.crumbs a { color: var(--muted); }
+.blog-byline { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+.answer-box { background: #eef6f2; border: 1px solid #cfe6da; border-radius: 12px; padding: 16px 18px; margin: 0 0 16px; }
+.answer-box p { margin: 6px 0 0; color: #23402f; }
+.takeaways { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 0 0 22px; }
+.takeaways ul { margin: 8px 0 0; padding-left: 20px; }
+.blog-cta { margin: 34px 0 20px; border: 2px solid var(--accent); }
+.blog-cta h3 { margin-top: 0; }
+.blog-cta .btn { margin-top: 12px; }
+.author-box { display: flex; gap: 14px; align-items: flex-start; border-top: 1px solid var(--line); padding-top: 18px; margin-top: 10px; }
+.author-box img { border-radius: 50%; object-fit: cover; }
+.author-box p { margin: 4px 0 0; font-size: 14px; }

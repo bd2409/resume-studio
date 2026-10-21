@@ -1,29 +1,15 @@
 {% extends "base.html" %}
-{% block title %}FAQ | {{ cfg.SITE_NAME }}{% endblock %}
+{% block title %}FAQ: tailored resumes, pricing and ATS | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}Answers about our tailored resume service: price, ATS-friendly format, length, turnaround, edits, data safety and payment.{% endblock %}
+{% block head %}<script type="application/ld+json">{{ schema | tojson }}</script>{% endblock %}
 {% block content %}
 <section class="block">
   <div class="wrap narrow">
-    <div class="section-title"><h2>Frequently asked questions</h2></div>
+    <div class="section-title"><h1 class="blog-h1">Frequently asked questions</h1></div>
     <div class="faq">
-      <details open><summary>What do I need to get started?</summary>
-        <p>At least one of your existing resumes (PDF or Word) and the full job description you're applying for. Uploading several versions of your resume (up to {{ cfg.MAX_RESUMES }}) helps us find more of your achievements.</p></details>
-      <details><summary>Will you add skills or experience I don't have?</summary>
-        <p>No. We only use facts from the resumes you upload. Every line is checked against them before you see it. If the job asks for something your resumes don't mention, we list it as a suggestion so you can add it yourself if it's true.</p></details>
-      <details><summary>How long does it take?</summary>
-        <p>Usually two to four minutes after payment. You'll see the progress on screen and we'll also email you a link.</p></details>
-      <details><summary>What format will I get?</summary>
-        <p>An editable Microsoft Word (.docx) file and a PDF, both in our clean, ATS-friendly format.</p></details>
-      <details><summary>Can I make changes?</summary>
-        <p>Yes. You can edit any line on the review page for {{ cfg.EDIT_WINDOW_DAYS }} days, and regenerate the resume up to {{ cfg.MAX_REGENERATIONS }} times with your own instructions, for example "focus more on team leadership". You can also edit the Word file anytime.</p></details>
-      <details><summary>Is my data safe?</summary>
-        <p>Your files are used only to write your resume. They're stored securely and deleted automatically after {{ cfg.RETENTION_DAYS }} days. We never sell your data or use it for advertising. See our <a href="/privacy">privacy policy</a>.</p></details>
-      <details><summary>Which payment methods do you accept?</summary>
-        <p>UPI, debit and credit cards, netbanking and popular wallets, processed securely by Cashfree Payments.</p></details>
-      <details><summary>What if something goes wrong?</summary>
-        <p>If your resume can't be generated, we retry automatically. If it still fails, you get a full refund. See our <a href="/refund-policy">refund policy</a>, or <a href="/contact">contact us</a>.</p></details>
-      <details><summary>I'm applying to several jobs. Do I pay for each?</summary>
-        <p>Yes. From your resume page you can order a new version for another job description for Rs {{ cfg.PRICE_VERSION }}. We reuse your uploaded resumes and design, and you get a new tailored resume and cover letter.</p></details>
+      {% for q, a in faqs %}<details{% if loop.first %} open{% endif %}><summary>{{ q }}</summary><p>{{ a }}</p></details>{% endfor %}
     </div>
+    <p style="text-align:center;margin-top:24px">More questions? Read our <a href="/blog">career guides</a> or <a href="/contact">contact us</a>.</p>
   </div>
 </section>
 {% endblock %}

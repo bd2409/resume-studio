@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}{{ post.description }}{% endblock %}
+{% block head %}
+<meta property="article:published_time" content="{{ post.date.isoformat() }}">
+<meta property="article:modified_time" content="{{ post.updated.isoformat() }}">
+<meta name="keywords" content="{{ post.keywords }}">
+<script type="application/ld+json">{{ schema | tojson }}</script>
+{% endblock %}
+{% block content %}
+<article class="wrap narrow prose blog-post" style="max-width:780px">
+  <nav class="crumbs"><a href="/">Home</a> › <a href="/blog">Blog</a> › <span>{{ post.category }}</span></nav>
+  <h1>{{ post.title }}</h1>
+  <p class="blog-byline">By <a href="/">{{ me.name }}</a> · Updated {{ post.updated.strftime('%d %b %Y') }} · {{ post.minutes }} min read</p>
+  <div class="answer-box">
+    <strong>Short answer</strong>
+    <p>{{ post.summary }}</p>
+  </div>
+  {% if post.takeaways %}
+  <div class="takeaways">
+    <strong>Key takeaways</strong>
+    <ul>{% for t in post.takeaways %}<li>{{ t }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {{ post.html | safe }}
+  {% if post.faqs %}
+  <h2 id="faq">Frequently asked questions</h2>
+  <div class="faq">
+    {% for f in post.faqs %}<details{% if loop.first %} open{% endif %}><summary>{{ f.q }}</summary>{{ f.a_html | safe }}</details>{% endfor %}
+  </div>
+  {% endif %}
+  {% set c = post.cta %}
+  <div class="card blog-cta">
+    <h3>{{ c[0] }}</h3>
+    <p>{{ c[1] }}</p>
+    <a class="btn" href="{{ c[2] }}">{{ c[3] }}</a>
+  </div>
+  <div class="author-box">
+    <img src="{{ me.photo }}" alt="{{ me.name }}" width="64" height="64" loading="lazy">
+    <div><strong>{{ me.name }}</strong><p>{{ me.headline }}. {{ me.name.split()[0] }} helps professionals present their experience clearly and helps startups build their marketing engine. <a href="/">More about {{ me.name.split()[0] }}</a></p></div>
+  </div>
+  {% if related %}
+  <h2>Read next</h2>
+  <ul>{% for r in related %}<li><a href="/blog/{{ r.slug }}">{{ r.title }}</a></li>{% endfor %}</ul>
+  {% endif %}
+  <div style="height:50px"></div>
+</article>
+{% endblock %}

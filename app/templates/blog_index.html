@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Career and job search blog for India | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}Practical guides on ATS resumes, LinkedIn, interviews, salary negotiation, career change after 40, and using Claude AI at work, by {{ cfg.OWNER_NAME }}.{% endblock %}
+{% block head %}
+<link rel="alternate" type="application/rss+xml" title="{{ cfg.SITE_NAME }} blog" href="{{ cfg.SITE_URL }}/blog/feed.xml">
+<script type="application/ld+json">{{ schema | tojson }}</script>
+{% endblock %}
+{% block content %}
+<section class="block soft">
+  <div class="wrap">
+    <div class="section-title">
+      <h1 class="blog-h1">Career guides that get you hired</h1>
+      <p>Practical, India-focused advice on resumes, LinkedIn, interviews, salary and using AI at work. Written by {{ cfg.OWNER_NAME }}.</p>
+    </div>
+    {% set cats = posts | map(attribute='category') | unique | list %}
+    <div class="blog-cats">{% for c in cats %}<a href="#{{ c | lower | replace(' ', '-') }}">{{ c }}</a>{% endfor %}</div>
+    {% for c in cats %}
+    <h2 class="blog-cat" id="{{ c | lower | replace(' ', '-') }}">{{ c }}</h2>
+    <div class="grid three">
+      {% for p in posts if p.category == c %}
+      <a class="card blog-card" href="/blog/{{ p.slug }}">
+        <span class="blog-meta">{{ p.minutes }} min read</span>
+        <h3>{{ p.title }}</h3>
+        <p>{{ p.description }}</p>
+        <span class="blog-more">Read →</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

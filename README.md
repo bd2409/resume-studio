@@ -37,3 +37,10 @@ With no `ANTHROPIC_API_KEY` the app returns sample content. With `DEV_SKIP_PAYME
 - Cashfree live keys; one real Rs 500 test payment, then refund it.
 - `ANTHROPIC_API_KEY` set, and several real resumes tested for quality.
 - `RESEND_API_KEY` and a verified sending domain, so customers get their order link by email.
+
+## Blog
+
+Posts are Markdown files in `app/content/blog/` (the file name is the URL slug). Each starts with a front-matter
+header (title, description, date, category, keywords, summary, takeaways, cta; see `app/blog.py`). A
+"## Frequently asked questions" section with "### Question" headings becomes FAQ structured data. New posts appear on
+/blog, in /sitemap.xml, /blog/feed.xml and /llms.txt after the next deploy.

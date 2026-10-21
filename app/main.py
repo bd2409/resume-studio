@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
 
-from . import ai, auth, config, db, mailer, payments, render
+from . import ai, auth, blog, config, db, faq, mailer, payments, render
 from .profile import PROFILE
 from .schemas import Profile, Resume
 
@@ -33,7 +33,13 @@ ALLOWED_EXT = {".pdf", ".docx", ".doc", ".rtf", ".odt", ".txt"}
 app = FastAPI(title=config.SITE_NAME, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "templates")
-templates.env.globals.update(cfg=config, year=datetime.now().year, me=PROFILE, resume_templates=render.TEMPLATES)
+templates.env.globals.update(cfg=config, year=datetime.now().year, me=PROFILE, resume_templates=render.TEMPLATES,
+                             latest_posts=blog.POSTS[:3],
+                             services_schema=[
+                                 {"@type": "Offer", "price": pr["price"], "priceCurrency": "INR",
+                                  "url": f"{config.SITE_URL}/book/{k}" if pr["service"] else f"{config.SITE_URL}/build?product={k}",
+                                  "itemOffered": {"@type": "Service", "name": pr["label"], "description": pr["blurb"]}}
+                                 for k, pr in config.PRODUCTS.items() if k != "version"])
 
 _generation_lock = threading.Lock()
 _running = set()
@@ -233,7 +239,6 @@ STATIC_PAGES = {
     "/": "personal.html",
     "/resume": "home.html",
     "/pricing": "pricing.html",
-    "/faq": "faq.html",
     "/contact": "contact.html",
     "/terms": "terms.html",
     "/privacy": "privacy.html",
@@ -254,30 +259,125 @@ for _path, _template in STATIC_PAGES.items():
     app.add_api_route(_path, _static_page(_template), methods=["GET"], response_class=HTMLResponse)
 
 
-PUBLIC_PAGES = ["/", "/resume", "/services", "/free", "/free/playbook", "/free/resume-check", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy"]
+PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy"]
+
+
+AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User",
+               "PerplexityBot", "Google-Extended", "Applebot-Extended", "Bingbot"]
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots():
-    return (
-        "User-agent: *\n"
-        "Disallow: /order/\n"
-        "Disallow: /admin\n"
-        "Disallow: /webhooks/\n"
-        f"Sitemap: {config.SITE_URL}/sitemap.xml\n"
-    )
+    private = "Disallow: /order/\nDisallow: /admin\nDisallow: /webhooks/\nDisallow: /account\n"
+    # Search engines and AI assistants are welcome on the public pages, so they can cite and recommend the site.
+    ai_rules = "".join(f"User-agent: {bot}\nAllow: /\n{private}\n" for bot in AI_CRAWLERS)
+    return f"User-agent: *\nAllow: /\n{private}\n{ai_rules}Sitemap: {config.SITE_URL}/sitemap.xml\n"
 
 
 @app.get("/sitemap.xml")
 def sitemap():
     today = datetime.now(timezone.utc).date().isoformat()
-    urls = "".join(
-        f"<url><loc>{config.SITE_URL}{path}</loc><lastmod>{today}</lastmod>"
-        f"<priority>{'1.0' if path in ('/', '/resume') else '0.5'}</priority></url>"
-        for path in PUBLIC_PAGES
-    )
+    entries = [(path, today, "1.0" if path in ("/", "/resume") else "0.7" if path in ("/blog", "/services", "/free") else "0.5")
+               for path in PUBLIC_PAGES]
+    entries += [(f"/blog/{p['slug']}", p["updated"].isoformat(), "0.8") for p in blog.POSTS]
+    urls = "".join(f"<url><loc>{config.SITE_URL}{path}</loc><lastmod>{mod}</lastmod><priority>{prio}</priority></url>"
+                   for path, mod, prio in entries)
     xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
     return Response(xml, media_type="application/xml")
+
+
+@app.get("/llms.txt", response_class=PlainTextResponse)
+def llms_txt():
+    """A plain-text guide to the site for AI assistants (the llms.txt convention)."""
+    u = config.SITE_URL
+    lines = [f"# {config.SITE_NAME} by {PROFILE['name']}", "",
+             f"> {PROFILE['name']} is a marketing strategist for startups based in India. {config.SITE_NAME} ({u}/resume) "
+             "writes job-tailored, ATS-friendly resumes and cover letters from a customer's own existing resumes, "
+             "checking every line against their real experience. It also offers LinkedIn makeovers, interview, outreach and "
+             "salary negotiation packs, free tools for professionals over 35, 1:1 Claude AI coaching, career calls and "
+             "startup marketing audits.", "",
+             "## Services and prices (one-time, in Indian rupees)"]
+    for key, pr in config.PRODUCTS.items():
+        if key == "version":
+            continue
+        link = f"{u}/book/{key}" if pr["service"] else f"{u}/build?product={key}"
+        lines.append(f"- [{pr['label']}]({link}): Rs {pr['price']:,}. {pr['blurb']}")
+    lines += ["", "## Free tools",
+              f"- [Free age-proof resume check]({u}/free/resume-check): score out of 100 and fixes for experienced professionals",
+              f"- [35+ Career Comeback Playbook]({u}/free/playbook): resume and LinkedIn fixes plus 15 Claude prompts",
+              "", "## Key facts",
+              "- Resumes use only facts from the customer's own uploaded resumes; nothing is invented.",
+              "- Output: editable Word and PDF, four ATS-friendly single-column designs, one page under 5 years of experience, two pages at most otherwise.",
+              f"- Edits for {config.EDIT_WINDOW_DAYS} days, {config.MAX_REGENERATIONS} free regenerations; files deleted after {config.RETENTION_DAYS} days.",
+              "- Payments by UPI, cards, netbanking and wallets through Cashfree.",
+              "", "## Guides"]
+    lines += [f"- [{p['title']}]({u}/blog/{p['slug']}): {p['summary']}" for p in blog.POSTS]
+    lines += ["", "## More", f"- [About {PROFILE['name']}]({u}/)", f"- [All services]({u}/services)", f"- [Pricing]({u}/pricing)",
+              f"- [FAQ]({u}/faq)", f"- [Contact]({u}/contact)"]
+    return "\n".join(lines) + "\n"
+
+
+# ------------------------------------------------------------------ blog and FAQ
+
+def _faq_schema(pairs):
+    return {"@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in pairs]}
+
+
+@app.get("/faq", response_class=HTMLResponse)
+def faq_page(request: Request):
+    items = faq.items()
+    return page(request, "faq.html", faqs=items, schema={"@context": "https://schema.org", **_faq_schema(items)})
+
+
+@app.get("/blog", response_class=HTMLResponse)
+def blog_index(request: Request):
+    schema = {"@context": "https://schema.org", "@type": "Blog", "name": f"{config.SITE_NAME} blog",
+              "url": f"{config.SITE_URL}/blog",
+              "author": {"@type": "Person", "name": PROFILE["name"], "url": f"{config.SITE_URL}/"},
+              "blogPost": [{"@type": "BlogPosting", "headline": p["title"], "url": f"{config.SITE_URL}/blog/{p['slug']}",
+                            "datePublished": p["date"].isoformat()} for p in blog.POSTS]}
+    return page(request, "blog_index.html", posts=blog.POSTS, schema=schema)
+
+
+@app.get("/blog/feed.xml")
+def blog_feed():
+    from email.utils import format_datetime
+    from xml.sax.saxutils import escape
+    items = "".join(
+        f"<item><title>{escape(p['title'])}</title><link>{config.SITE_URL}/blog/{p['slug']}</link>"
+        f"<guid>{config.SITE_URL}/blog/{p['slug']}</guid><description>{escape(p['description'])}</description>"
+        f"<pubDate>{format_datetime(datetime(p['date'].year, p['date'].month, p['date'].day, tzinfo=timezone.utc))}</pubDate></item>"
+        for p in blog.POSTS)
+    xml = (f'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>{escape(config.SITE_NAME)} blog</title>'
+           f"<link>{config.SITE_URL}/blog</link><description>Career guides by {escape(PROFILE['name'])}</description>{items}</channel></rss>")
+    return Response(xml, media_type="application/rss+xml")
+
+
+@app.get("/blog/{slug}", response_class=HTMLResponse)
+def blog_post(request: Request, slug: str):
+    post = blog.BY_SLUG.get(slug)
+    if not post:
+        raise HTTPException(404)
+    url = f"{config.SITE_URL}/blog/{slug}"
+    graph = [
+        {"@type": "BlogPosting", "@id": url + "#article", "headline": post["title"], "description": post["description"],
+         "abstract": post["summary"], "datePublished": post["date"].isoformat(), "dateModified": post["updated"].isoformat(),
+         "keywords": post["keywords"], "articleSection": post["category"], "inLanguage": "en-IN", "mainEntityOfPage": url,
+         "image": config.SITE_URL + PROFILE["photo"],
+         "author": {"@type": "Person", "name": PROFILE["name"], "url": f"{config.SITE_URL}/", "sameAs": [PROFILE["linkedin"]]},
+         "publisher": {"@type": "Organization", "name": config.SITE_NAME, "url": f"{config.SITE_URL}/resume"}},
+        {"@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": f"{config.SITE_URL}/"},
+            {"@type": "ListItem", "position": 2, "name": "Blog", "item": f"{config.SITE_URL}/blog"},
+            {"@type": "ListItem", "position": 3, "name": post["title"], "item": url}]},
+    ]
+    if post["faqs"]:
+        graph.append(_faq_schema([(f["q"], f["a"]) for f in post["faqs"]]))
+    related = [p for p in blog.POSTS if p["slug"] != slug and p["category"] == post["category"]]
+    related += [p for p in blog.POSTS if p["slug"] != slug and p not in related]
+    return page(request, "blog_post.html", post=post, related=related[:3],
+                schema={"@context": "https://schema.org", "@graph": graph}, og_type="article")
 
 
 # ------------------------------------------------------------------ accounts

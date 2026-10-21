@@ -85,6 +85,16 @@
   </div>
 </section>
 
+<section class="block soft">
+  <div class="wrap">
+    <div class="section-title"><h2>Career guides</h2><p>Free, practical advice from {{ cfg.OWNER_NAME }}.</p></div>
+    <div class="grid three">
+      {% for p in latest_posts %}<a class="card blog-card" href="/blog/{{ p.slug }}"><span class="blog-meta">{{ p.category }}</span><h3>{{ p.title }}</h3><p>{{ p.description }}</p><span class="blog-more">Read →</span></a>{% endfor %}
+    </div>
+    <p style="text-align:center;margin-top:18px"><a href="/blog">All career guides →</a></p>
+  </div>
+</section>
+
 <section class="block" id="templates">
   <div class="wrap">
     <div class="section-title">

@@ -10,6 +10,10 @@
   <a class="btn small" href="{{ href }}">{{ cta }}</a>
 </div>
 {% endmacro %}
+{% block head %}<script type="application/ld+json">{{ {
+  "@context": "https://schema.org", "@type": "OfferCatalog", "name": cfg.SITE_NAME ~ " services", "url": cfg.SITE_URL ~ "/services",
+  "itemListElement": services_schema
+} | tojson }}</script>{% endblock %}
 {% block content %}
 <section class="block soft">
   <div class="wrap">
