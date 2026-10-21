@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS orders (
     resume_json     TEXT,
     notes_json      TEXT,
     profile_json    TEXT,
+    template        TEXT NOT NULL DEFAULT 'classic',
     updated_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS orders_rzp ON orders (rzp_order_id);
@@ -52,6 +53,9 @@ def conn():
 def init():
     with conn() as c:
         c.executescript(SCHEMA)
+        cols = {r["name"] for r in c.execute("PRAGMA table_info(orders)")}
+        if "template" not in cols:
+            c.execute("ALTER TABLE orders ADD COLUMN template TEXT NOT NULL DEFAULT 'classic'")
 
 
 def create_order(customer_name, email, phone, job_description, files, amount_paise):

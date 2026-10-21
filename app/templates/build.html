@@ -35,6 +35,9 @@
       </div>
     </div>
 
+    <label style="margin-top:22px">Choose a design <span class="hint">(you can switch later for free)</span></label>
+    {% with selected = form.template or 'classic', autosubmit = False %}{% include "_template_picker.html" %}{% endwith %}
+
     <label class="check" style="margin-top:22px">
       <input type="checkbox" name="consent" value="yes" required>
       <span>I agree to the <a href="/terms" target="_blank">terms</a> and <a href="/privacy" target="_blank">privacy policy</a>, and consent to my files being processed to create my resume. They are deleted after {{ cfg.RETENTION_DAYS }} days.</span>

@@ -186,3 +186,15 @@ footer .copy { grid-column: 1 / -1; border-top: 1px solid #22344f; padding-top: 
   section.block { padding: 52px 0; }
   .form-card { padding: 20px; }
 }
+
+/* template picker */
+.tpl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 8px; }
+.tpl { display: block; border: 2px solid var(--line); border-radius: 10px; padding: 6px; cursor: pointer; text-align: center; background: #fff; font-weight: 600; font-size: 14px; transition: border-color .15s, box-shadow .15s; }
+.tpl input { position: absolute; opacity: 0; pointer-events: none; }
+.tpl img { width: 100%; aspect-ratio: 210 / 297; object-fit: cover; object-position: top; border-radius: 6px; border: 1px solid #eee; display: block; margin-bottom: 6px; }
+.tpl:hover { border-color: #9fb3cf; }
+.tpl.on, .tpl:has(input:checked) { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(31, 58, 95, .15); }
+.tpl-switch { margin: 14px 0; }
+.tpl-switch .tpl-grid { gap: 8px; }
+.tpl-switch .tpl { font-size: 12px; padding: 4px; }
+@media (max-width: 600px) { .tpl-grid { grid-template-columns: repeat(2, 1fr); } }

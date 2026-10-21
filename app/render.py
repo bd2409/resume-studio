@@ -2,6 +2,7 @@
 import json
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 from docx import Document
@@ -11,10 +12,30 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
-FONT = "Calibri"
-ACCENT = RGBColor(0x1F, 0x3A, 0x5F)  # navy
 GREY = RGBColor(0x44, 0x44, 0x44)
 RIGHT_TAB = Cm(18.0)  # usable width on A4 with 1.5 cm margins
+
+# Every template keeps the same sections and a single ATS-friendly column; only the look changes.
+# Fonts are ones LibreOffice has metric-compatible copies of (Carlito, Caladea, Liberation), so the PDF matches Word.
+TEMPLATES = {
+    "classic": {"label": "Classic", "font": "Calibri", "accent": "1F3A5F", "align": "center", "titles": "rule", "name_size": 20},
+    "executive": {"label": "Executive", "font": "Cambria", "accent": "6B1D2A", "align": "center", "titles": "double", "name_size": 21},
+    "modern": {"label": "Modern", "font": "Calibri", "accent": "0F766E", "align": "left", "titles": "band", "name_size": 22},
+    "minimal": {"label": "Minimal", "font": "Arial", "accent": "222222", "align": "left", "titles": "plain", "name_size": 18},
+}
+DEFAULT_TEMPLATE = "classic"
+_lock = threading.Lock()  # the active theme is module state, so builds run one at a time
+
+FONT = "Calibri"
+ACCENT = RGBColor(0x1F, 0x3A, 0x5F)
+_theme = TEMPLATES[DEFAULT_TEMPLATE]
+
+
+def use_template(key):
+    global FONT, ACCENT, _theme
+    _theme = TEMPLATES.get(key) or TEMPLATES[DEFAULT_TEMPLATE]
+    FONT = _theme["font"]
+    ACCENT = RGBColor.from_string(_theme["accent"])
 
 
 def set_base_styles(doc):
@@ -32,16 +53,26 @@ def set_base_styles(doc):
         sec.left_margin = sec.right_margin = Cm(1.5)
 
 
-def bottom_border(paragraph, color="1F3A5F", size=8):
+def bottom_border(paragraph, color=None, size=8, style="single"):
+    color = color or _theme["accent"]
     pPr = paragraph._p.get_or_add_pPr()
     pbdr = OxmlElement("w:pBdr")
     bottom = OxmlElement("w:bottom")
-    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:val"), style)
     bottom.set(qn("w:sz"), str(size))
     bottom.set(qn("w:space"), "1")
     bottom.set(qn("w:color"), color)
     pbdr.append(bottom)
     pPr.append(pbdr)
+
+
+def shade(paragraph, fill):
+    pPr = paragraph._p.get_or_add_pPr()
+    shd = OxmlElement("w:shd")
+    shd.set(qn("w:val"), "clear")
+    shd.set(qn("w:color"), "auto")
+    shd.set(qn("w:fill"), fill)
+    pPr.append(shd)
 
 
 def run(p, text, bold=False, italic=False, size=None, color=None):
@@ -55,31 +86,48 @@ def run(p, text, bold=False, italic=False, size=None, color=None):
 
 
 def header(doc, h):
+    align = WD_ALIGN_PARAGRAPH.CENTER if _theme["align"] == "center" else WD_ALIGN_PARAGRAPH.LEFT
     p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run(p, h["name"].upper(), bold=True, size=20, color=ACCENT)
+    p.alignment = align
+    name = h["name"] if _theme["titles"] == "band" else h["name"].upper()
+    run(p, name, bold=True, size=_theme["name_size"], color=ACCENT)
     p.paragraph_format.space_after = Pt(0)
 
     p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.alignment = align
     run(p, h["headline"], bold=True, size=11.5, color=GREY)
     p.paragraph_format.space_after = Pt(2)
 
     p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.alignment = align
     parts = [h["email"], h["phone"], h["linkedin"], h["location"]]
     run(p, "  |  ".join(x for x in parts if x), size=9.5)
-    bottom_border(p, size=12)
+    if _theme["titles"] == "double":
+        bottom_border(p, size=6, style="double")
+    elif _theme["titles"] != "plain":
+        bottom_border(p, size=12)
+    else:
+        bottom_border(p, color="BBBBBB", size=4)
     p.paragraph_format.space_after = Pt(4)
 
 
 def section_title(doc, title):
     p = doc.add_paragraph()
-    run(p, title.upper(), bold=True, size=11.5, color=ACCENT)
+    style = _theme["titles"]
+    if style == "band":
+        shade(p, _theme["accent"])
+        run(p, " " + title.upper(), bold=True, size=11, color=RGBColor(0xFF, 0xFF, 0xFF))
+    elif style == "plain":
+        run(p, title.upper(), bold=True, size=11, color=ACCENT)
+    else:
+        run(p, title.upper(), bold=True, size=11.5, color=ACCENT)
     p.paragraph_format.space_before = Pt(8)
     p.paragraph_format.space_after = Pt(3)
     p.paragraph_format.keep_with_next = True
-    bottom_border(p, size=6)
+    if style == "rule":
+        bottom_border(p, size=6)
+    elif style == "double":
+        bottom_border(p, size=4, style="double")
 
 
 def bullet(doc, text):
@@ -119,7 +167,13 @@ def competencies(doc, items, cols=3):
         p.paragraph_format.space_after = Pt(1)
 
 
-def build(data, out):
+def build(data, out, template=DEFAULT_TEMPLATE):
+    with _lock:
+        use_template(template)
+        _build(data, out)
+
+
+def _build(data, out):
     doc = Document()
     set_base_styles(doc)
     header(doc, data["header"])
@@ -190,4 +244,4 @@ def to_previews(pdf_path, dpi=110):
 
 if __name__ == "__main__":
     with open(sys.argv[1], encoding="utf-8") as f:
-        build(json.load(f), sys.argv[2])
+        build(json.load(f), sys.argv[2], *(sys.argv[3:4]))

@@ -1,0 +1,9 @@
+<div class="tpl-grid">
+  {% for key, t in resume_templates.items() %}
+  <label class="tpl{% if key == selected %} on{% endif %}">
+    <input type="radio" name="template" value="{{ key }}" {% if key == selected %}checked{% endif %} {% if autosubmit %}onchange="this.form.submit()"{% endif %}>
+    <img src="/static/templates/{{ key }}.png" alt="{{ t.label }} resume template" loading="lazy">
+    <span>{{ t.label }}</span>
+  </label>
+  {% endfor %}
+</div>

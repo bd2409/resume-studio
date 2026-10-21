@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 # LibreOffice converts Word to PDF; Carlito matches Calibri's metrics; poppler makes page previews.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libreoffice-writer-nogui fonts-crosextra-carlito fonts-liberation poppler-utils \
+        libreoffice-writer-nogui fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /srv

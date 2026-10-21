@@ -29,7 +29,7 @@ ALLOWED_EXT = {".pdf", ".docx", ".doc", ".rtf", ".odt", ".txt"}
 app = FastAPI(title=config.SITE_NAME, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "templates")
-templates.env.globals.update(cfg=config, year=datetime.now().year, me=PROFILE)
+templates.env.globals.update(cfg=config, year=datetime.now().year, me=PROFILE, resume_templates=render.TEMPLATES)
 
 _generation_lock = threading.Lock()
 _running = set()
@@ -67,7 +67,7 @@ def editable(order):
 
 def render_files(order, resume: Resume):
     docx_path, _ = output_paths(order)
-    render.build(resume.model_dump(), docx_path)
+    render.build(resume.model_dump(), docx_path, order.get("template") or render.DEFAULT_TEMPLATE)
     render.to_previews(render.to_pdf(docx_path))
 
 
@@ -210,9 +210,13 @@ async def build_submit(
     phone: str = Form(...),
     job_description: str = Form(...),
     consent: str = Form(None),
+    template: str = Form(render.DEFAULT_TEMPLATE),
     resumes: list[UploadFile] = File(...),
 ):
-    form = {"customer_name": customer_name, "email": email, "phone": phone, "job_description": job_description}
+    if template not in render.TEMPLATES:
+        template = render.DEFAULT_TEMPLATE
+    form = {"customer_name": customer_name, "email": email, "phone": phone, "job_description": job_description,
+            "template": template}
     resumes = [f for f in resumes if f.filename]
 
     def fail(msg):
@@ -250,7 +254,7 @@ async def build_submit(
         name = f"resume_{i}{ext}"
         (up / name).write_bytes(data)
         names.append(name)
-    db.update(order["id"], files_json=json.dumps(names))
+    db.update(order["id"], files_json=json.dumps(names), template=template)
     return RedirectResponse(f"/order/{order['token']}", status_code=303)
 
 
@@ -422,6 +426,18 @@ async def save(token: str, request: Request):
     })
     render_files(order, resume)
     db.update(order["id"], resume_json=resume.model_dump_json(), status="ready")
+    return RedirectResponse(f"/order/{token}?saved=1", status_code=303)
+
+
+@app.post("/order/{token}/template")
+def change_template(token: str, template: str = Form(...)):
+    """Re-renders the same content in another design; no AI call, so it doesn't use a regeneration."""
+    order = load_order(token)
+    if not editable(order) or not order["resume_json"] or template not in render.TEMPLATES:
+        raise HTTPException(400, "Cannot change the design now")
+    db.update(order["id"], template=template)
+    order["template"] = template
+    render_files(order, Resume.model_validate_json(order["resume_json"]))
     return RedirectResponse(f"/order/{token}?saved=1", status_code=303)
 
 
