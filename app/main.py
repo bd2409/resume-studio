@@ -258,7 +258,8 @@ def order_page(request: Request, token: str):
     order = load_order(token)
     status = order["status"]
     if status == "awaiting_payment":
-        return page(request, "pay.html", order=order, razorpay=payments.enabled() and config.AI_MODE == "live",
+        return page(request, "pay.html", order=order, cashfree=payments.enabled() and config.AI_MODE == "live", cf_mode=payments.mode(),
+                    payment_failed=request.query_params.get("payment") == "failed",
                     dev_skip=config.DEV_SKIP_PAYMENT, file_count=len(json.loads(order["files_json"])))
     if status in ("paid", "generating"):
         return page(request, "progress.html", order=order)
@@ -288,32 +289,32 @@ def checkout(token: str):
     if not payments.enabled() or config.AI_MODE != "live":
         # Never take money while the AI is not connected.
         raise HTTPException(400, "Payments are not configured")
-    rzp_order_id = order["rzp_order_id"] or payments.create_order(order)
-    db.update(order["id"], rzp_order_id=rzp_order_id)
-    return {
-        "key": config.RAZORPAY_KEY_ID,
-        "order_id": rzp_order_id,
-        "amount": order["amount_paise"],
-        "name": config.SITE_NAME,
-        "description": "Tailored resume (Word + PDF)",
-        "prefill": {"name": order["customer_name"], "email": order["email"], "contact": order["phone"]},
-    }
+    cf_order_id, session_id = payments.session_for(order)
+    db.update(order["id"], rzp_order_id=cf_order_id)
+    return {"payment_session_id": session_id, "mode": payments.mode()}
 
 
-@app.post("/order/{token}/verify")
-async def verify(token: str, request: Request, background: BackgroundTasks):
-    order = load_order(token)
-    body = await request.json()
-    ok = (
-        body.get("razorpay_order_id") == order["rzp_order_id"]
-        and payments.verify_checkout(body.get("razorpay_order_id", ""), body.get("razorpay_payment_id", ""),
-                                     body.get("razorpay_signature", ""))
-    )
-    if not ok:
-        raise HTTPException(400, "Payment could not be verified")
-    if db.mark_paid(order["id"], body["razorpay_payment_id"]):
+def _confirm_payment(order, background):
+    """Checks with Cashfree and starts generation once. Returns True if the order is paid."""
+    if order["status"] != "awaiting_payment":
+        return True
+    payment_id = payments.confirmed_payment(order)
+    if not payment_id:
+        return False
+    if db.mark_paid(order["id"], payment_id):
         start_generation(background, order["id"])
-    return {"ok": True}
+    return True
+
+
+@app.get("/order/{token}/payment-return")
+def payment_return(token: str, background: BackgroundTasks):
+    order = load_order(token)
+    try:
+        paid = _confirm_payment(order, background)
+    except Exception:
+        log.exception("Payment check failed for %s", order["id"])
+        paid = False
+    return RedirectResponse(f"/order/{token}" + ("" if paid else "?payment=failed"), status_code=303)
 
 
 @app.post("/order/{token}/dev-pay")
@@ -336,17 +337,18 @@ def owner_pay(token: str, background: BackgroundTasks, creds: HTTPBasicCredentia
     return RedirectResponse(f"/order/{token}", status_code=303)
 
 
-@app.post("/webhooks/razorpay")
-async def razorpay_webhook(request: Request, background: BackgroundTasks):
-    raw = (await request.body()).decode()
-    if not payments.verify_webhook(raw, request.headers.get("X-Razorpay-Signature", "")):
+@app.post("/webhooks/cashfree")
+async def cashfree_webhook(request: Request, background: BackgroundTasks):
+    raw = await request.body()
+    if not payments.verify_webhook(raw, request.headers.get("x-webhook-timestamp", ""),
+                                   request.headers.get("x-webhook-signature", "")):
         raise HTTPException(400, "Bad signature")
     event = json.loads(raw)
-    if event.get("event") in ("payment.captured", "order.paid"):
-        payment = event["payload"]["payment"]["entity"]
-        order = db.get_by_rzp_order(payment.get("order_id"))
-        if order and payment.get("amount") == order["amount_paise"] and db.mark_paid(order["id"], payment["id"]):
-            start_generation(background, order["id"])
+    cf_order_id = ((event.get("data") or {}).get("order") or {}).get("order_id")
+    order = db.get_by_rzp_order(cf_order_id) if cf_order_id else None
+    if order:
+        # Confirm with Cashfree's API rather than trusting the payload.
+        _confirm_payment(order, background)
     return {"ok": True}
 
 

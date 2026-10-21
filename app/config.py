@@ -33,10 +33,12 @@ AI_MODEL = os.getenv("AI_MODEL", "claude-opus-5-5")
 # "mock" skips the AI and returns sample content, for local testing only.
 AI_MODE = os.getenv("AI_MODE", "live" if ANTHROPIC_API_KEY else "mock")
 
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
-RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
-# Lets you skip payment locally when Razorpay keys are not set. Never enable in production.
+CASHFREE_APP_ID = os.getenv("CASHFREE_APP_ID", "")
+CASHFREE_SECRET_KEY = os.getenv("CASHFREE_SECRET_KEY", "")
+# "production" or "sandbox" (test keys)
+CASHFREE_ENV = os.getenv("CASHFREE_ENV", "production").lower()
+CASHFREE_API_VERSION = os.getenv("CASHFREE_API_VERSION", "2025-01-01")
+# Lets you skip payment locally when Cashfree keys are not set. Never enable in production.
 DEV_SKIP_PAYMENT = _bool("DEV_SKIP_PAYMENT", False)
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")

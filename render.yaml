@@ -26,12 +26,12 @@ services:
         value: "500"
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: RAZORPAY_KEY_ID
+      - key: CASHFREE_APP_ID
         sync: false
-      - key: RAZORPAY_KEY_SECRET
+      - key: CASHFREE_SECRET_KEY
         sync: false
-      - key: RAZORPAY_WEBHOOK_SECRET
-        sync: false
+      - key: CASHFREE_ENV
+        value: production
       - key: DEV_SKIP_PAYMENT
         value: "false"
       - key: RESEND_API_KEY
