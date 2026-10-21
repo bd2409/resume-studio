@@ -6,12 +6,13 @@
   <div class="form-card progress-box" style="margin:50px 0 70px">
     <div class="spinner"></div>
     {% set prod = cfg.PRODUCTS.get(order.product or 'resume') %}
-    <h1 style="margin:0 0 6px;color:var(--navy-dark);font-size:28px">{% if prod.resume %}Writing your tailored resume{% else %}Rewriting your LinkedIn profile{% endif %}</h1>
+    <h1 style="margin:0 0 6px;color:var(--navy-dark);font-size:28px">{% if prod.resume %}Writing your tailored resume{% elif prod.pack %}Writing your {{ prod.label | lower }}{% else %}Rewriting your LinkedIn profile{% endif %}</h1>
     <p style="color:var(--muted);margin:0">This usually takes two to four minutes. You can keep this page open, or come back later using the link in your email.</p>
     <ul class="steps-list" id="steps">
       <li data-k="Reading">Reading your resumes</li>
       {% if prod.resume %}<li data-k="Writing">Writing your resume and cover letter</li>{% endif %}
       {% if prod.linkedin %}<li data-k="Rewriting">Rewriting your LinkedIn profile</li>{% endif %}
+      {% if prod.pack %}<li data-k="Writing">Writing your {{ prod.label | lower }}</li>{% endif %}
       {% if prod.resume %}<li data-k="Creating">Creating your Word and PDF files</li>{% endif %}
     </ul>
   </div>

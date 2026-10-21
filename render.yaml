@@ -28,6 +28,10 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: CALL_BOOKING_URL
+        sync: false
+      - key: OWNER_EMAIL
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: CASHFREE_APP_ID

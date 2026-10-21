@@ -251,6 +251,41 @@ def build_cover(header_data, letter, out, template=DEFAULT_TEMPLATE, date_text="
         doc.save(out)
 
 
+def build_pack(pack, out, owner=""):
+    """An AI pack (interview prep, outreach, ...) as a simple, printable Word document."""
+    with _lock:
+        use_template(DEFAULT_TEMPLATE)
+        doc = Document()
+        set_base_styles(doc)
+        doc.styles["Normal"].font.size = Pt(11)
+        for sec in doc.sections:
+            sec.top_margin = sec.bottom_margin = Cm(2.0)
+            sec.left_margin = sec.right_margin = Cm(2.2)
+        title = doc.add_paragraph()
+        run(title, pack["title"], bold=True, size=18, color=ACCENT)
+        title.paragraph_format.space_after = Pt(6)
+        intro = doc.add_paragraph(pack["intro"])
+        intro.paragraph_format.space_after = Pt(10)
+        for section in pack["sections"]:
+            section_title(doc, section["heading"])
+            if section.get("intro"):
+                p = doc.add_paragraph()
+                run(p, section["intro"], italic=True, color=GREY)
+                p.paragraph_format.space_after = Pt(6)
+            for item in section["items"]:
+                p = doc.add_paragraph()
+                run(p, item["title"], bold=True)
+                p.paragraph_format.space_before = Pt(8)
+                p.paragraph_format.keep_with_next = True
+                for para in item["body"].split("\n"):
+                    if para.strip():
+                        p = doc.add_paragraph(para.strip())
+                        p.paragraph_format.space_after = Pt(4)
+        doc.core_properties.title = pack["title"]
+        doc.core_properties.author = owner
+        doc.save(out)
+
+
 def to_pdf(docx_path):
     """Convert with LibreOffice so the PDF matches the Word file exactly."""
     docx_path = Path(docx_path)

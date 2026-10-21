@@ -35,9 +35,21 @@ CREATE TABLE IF NOT EXISTS orders (
     product         TEXT NOT NULL DEFAULT 'resume',
     parent_id       TEXT,
     linkedin_json   TEXT,
+    pack_json       TEXT,
+    extra_json      TEXT,
     updated_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS orders_rzp ON orders (rzp_order_id);
+CREATE TABLE IF NOT EXISTS enquiries (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at  TEXT NOT NULL,
+    kind        TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    email       TEXT NOT NULL,
+    phone       TEXT NOT NULL,
+    org         TEXT NOT NULL DEFAULT '',
+    details     TEXT NOT NULL DEFAULT ''
+);
 """
 
 
@@ -62,7 +74,8 @@ def init():
         cols = {r["name"] for r in c.execute("PRAGMA table_info(orders)")}
         for col, ddl in (("template", "TEXT NOT NULL DEFAULT 'classic'"), ("target_role", "TEXT NOT NULL DEFAULT ''"),
                          ("cover_json", "TEXT"), ("user_email", "TEXT"),
-                         ("product", "TEXT NOT NULL DEFAULT 'resume'"), ("parent_id", "TEXT"), ("linkedin_json", "TEXT")):
+                         ("product", "TEXT NOT NULL DEFAULT 'resume'"), ("parent_id", "TEXT"), ("linkedin_json", "TEXT"),
+                         ("pack_json", "TEXT"), ("extra_json", "TEXT")):
             if col not in cols:
                 c.execute(f"ALTER TABLE orders ADD COLUMN {col} {ddl}")
 
@@ -119,8 +132,8 @@ def mark_paid(order_id, payment_id):
 def recent(limit=200):
     with conn() as c:
         rows = c.execute(
-            "SELECT id, token, created_at, customer_name, email, phone, status, amount_paise,"
-            " rzp_payment_id, regenerations, error FROM orders ORDER BY created_at DESC LIMIT ?",
+            "SELECT id, token, created_at, customer_name, email, phone, status, amount_paise, product,"
+            " target_role, extra_json, rzp_payment_id, regenerations, error FROM orders ORDER BY created_at DESC LIMIT ?",
             (limit,),
         ).fetchall()
     return [dict(r) for r in rows]
@@ -136,7 +149,8 @@ def purge_content(order_id):
     with conn() as c:
         c.execute(
             "UPDATE orders SET job_description = '', files_json = '[]', resume_json = NULL,"
-            " profile_json = NULL, notes_json = NULL, updated_at = ? WHERE id = ?",
+            " profile_json = NULL, notes_json = NULL, pack_json = NULL, linkedin_json = NULL, cover_json = NULL,"
+            " updated_at = ? WHERE id = ?",
             (now(), order_id),
         )
 
@@ -148,4 +162,16 @@ def orders_for_email(email):
             "SELECT * FROM orders WHERE lower(email) = ? OR user_email = ? ORDER BY created_at DESC",
             (email.lower(), email.lower()),
         ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_enquiry(kind, name, email, phone, org, details):
+    with conn() as c:
+        c.execute("INSERT INTO enquiries (created_at, kind, name, email, phone, org, details) VALUES (?,?,?,?,?,?,?)",
+                  (now(), kind, name, email, phone, org, details))
+
+
+def enquiries(limit=100):
+    with conn() as c:
+        rows = c.execute("SELECT * FROM enquiries ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
     return [dict(r) for r in rows]

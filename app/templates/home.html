@@ -64,7 +64,12 @@
       <div class="card"><div class="icon">💼</div><h3>LinkedIn profile makeover</h3><p>Headline, About, experience and skills rewritten so recruiters find you. <strong>Rs {{ cfg.PRICE_LINKEDIN }}</strong></p><a href="/build?product=linkedin">Start →</a></div>
       <div class="card"><div class="icon">⭐</div><h3>Resume + LinkedIn bundle</h3><p>One consistent story everywhere recruiters look. <strong>Rs {{ '{:,}'.format(cfg.PRICE_BUNDLE) }}</strong></p><a href="/build?product=bundle">Start →</a></div>
     </div>
-    <p style="text-align:center;color:var(--muted);margin-top:18px">Already a customer? Get a new version for another job for just Rs {{ cfg.PRICE_VERSION }} from your resume page.</p>
+    <div class="grid four" style="margin-top:22px">
+      {% for key in ['interview', 'outreach', 'salary', 'content'] %}{% set pr = cfg.PRODUCTS[key] %}
+      <div class="card"><div class="icon">{{ pr.icon }}</div><h3>{{ pr.label }}</h3><p>{{ pr.blurb }} <strong>Rs {{ '{:,}'.format(pr.price) }}</strong></p><a href="/build?product={{ key }}">Start →</a></div>
+      {% endfor %}
+    </div>
+    <p style="text-align:center;color:var(--muted);margin-top:18px">Want {{ cfg.OWNER_NAME }}'s personal touch? See the <a href="/build?product=premium">premium resume</a>, a <a href="/book/call">1:1 career call</a> or <a href="/services">all services</a>.</p>
   </div>
 </section>
 

@@ -7,13 +7,14 @@
   {% set paid = orders | selectattr('rzp_payment_id') | list %}
   <p>{{ orders | length }} orders shown, {{ paid | length }} paid.</p>
   <table class="admin">
-    <tr><th>Created (UTC)</th><th>Customer</th><th>Email</th><th>Phone</th><th>Status</th><th>Amount</th><th>Payment ID</th><th>Regens</th><th>Error</th><th></th></tr>
+    <tr><th>Created (UTC)</th><th>Customer</th><th>Email</th><th>Phone</th><th>Product</th><th>Status</th><th>Amount</th><th>Payment ID</th><th>Regens</th><th>Error</th><th></th></tr>
     {% for o in orders %}
     <tr>
       <td>{{ o.created_at[:16].replace('T', ' ') }}</td>
       <td>{{ o.customer_name }}</td>
       <td>{{ o.email }}</td>
       <td>{{ o.phone }}</td>
+      <td>{{ o.label }}{% if o.target_role %}<br><small>{{ o.target_role }}</small>{% endif %}{% for k, v in o.extra.items() if v %}<br><small><b>{{ k.replace('_', ' ') }}:</b> {{ v | truncate(160) }}</small>{% endfor %}</td>
       <td>{{ o.status }}</td>
       <td>Rs {{ (o.amount_paise / 100) | int }}</td>
       <td>{{ o.rzp_payment_id or '' }}</td>
@@ -23,5 +24,15 @@
     </tr>
     {% endfor %}
   </table>
+
+  <h2 style="color:var(--navy-dark);margin-top:40px">College and bulk enquiries</h2>
+  {% if enquiries %}
+  <table class="admin">
+    <tr><th>Received (UTC)</th><th>Name</th><th>Institution</th><th>Email</th><th>Phone</th><th>Details</th></tr>
+    {% for e in enquiries %}
+    <tr><td>{{ e.created_at[:16].replace('T', ' ') }}</td><td>{{ e.name }}</td><td>{{ e.org }}</td><td>{{ e.email }}</td><td>{{ e.phone }}</td><td style="white-space:pre-wrap;max-width:320px">{{ e.details }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p>No enquiries yet.</p>{% endif %}
 </div>
 {% endblock %}

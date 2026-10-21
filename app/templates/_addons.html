@@ -1,0 +1,18 @@
+{# One-click add-ons built from the same resumes. Needs: order, addons #}
+{% if addons %}
+<details class="card cover-card version-card"{% if open_addons %} open{% endif %}>
+  <summary><strong>Add more for this job</strong> from the same resumes, nothing to upload again.</summary>
+  <div class="addon-list">
+    {% for key, pr in addons %}
+    <form method="post" action="/order/{{ order.token }}/addon" class="{{ 'col' if key == 'salary' else '' }}">
+      <input type="hidden" name="product" value="{{ key }}">
+      <div><strong>{{ pr.icon }} {{ pr.label }} · Rs {{ '{:,}'.format(pr.price) }}</strong><span>{{ pr.blurb }}</span></div>
+      {% if key == 'salary' %}
+      <textarea name="offer_details" rows="3" required minlength="20" placeholder="About your offer: company, role, the numbers offered, your current pay, other offers"></textarea>
+      {% endif %}
+      <button class="btn small{{ ' light' if key != 'salary' else '' }}" style="flex-shrink:0;align-self:{{ 'flex-start' if key == 'salary' else 'center' }}">Add</button>
+    </form>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}

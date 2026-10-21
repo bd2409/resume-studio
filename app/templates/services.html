@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Career and marketing services | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}Resumes, LinkedIn makeovers, interview prep, outreach and salary negotiation scripts, career calls and startup marketing audits by {{ cfg.OWNER_NAME }}.{% endblock %}
+{% macro svc(key, href, cta) %}{% set pr = cfg.PRODUCTS[key] %}
+<div class="card svc-card">
+  <div class="icon">{{ pr.icon }}</div>
+  <h3>{{ pr.label }}</h3>
+  <p>{{ pr.blurb }}</p>
+  <div class="svc-price">Rs {{ '{:,}'.format(pr.price) }}</div>
+  <a class="btn small" href="{{ href }}">{{ cta }}</a>
+</div>
+{% endmacro %}
+{% block content %}
+<section class="block soft">
+  <div class="wrap">
+    <div class="section-title">
+      <h2>Everything you need to get hired</h2>
+      <p>Built from the resumes you upload, so there's nothing to fill in twice. Pay once per order, no subscription.</p>
+    </div>
+
+    <div class="svc-group">
+      <h2>Get noticed</h2>
+      <p>Your resume and LinkedIn, rewritten from your real experience.</p>
+      <div class="grid four">
+        {{ svc('resume', '/build?product=resume', 'Build my resume') }}
+        {{ svc('linkedin', '/build?product=linkedin', 'Upgrade my LinkedIn') }}
+        {{ svc('bundle', '/build?product=bundle', 'Get the bundle') }}
+        {{ svc('premium', '/build?product=premium', 'Go premium') }}
+      </div>
+    </div>
+
+    <div class="svc-group">
+      <h2>Land the job</h2>
+      <p>Ready to use in minutes, written for the role you're going after.</p>
+      <div class="grid four">
+        {{ svc('interview', '/build?product=interview', 'Prepare me') }}
+        {{ svc('outreach', '/build?product=outreach', 'Get the messages') }}
+        {{ svc('salary', '/build?product=salary', 'Get my script') }}
+        {{ svc('content', '/build?product=content', 'Get 30 days of posts') }}
+      </div>
+      <p style="margin-top:14px;font-size:14px">Already ordered a resume? Add any of these from your resume page for the same job, with nothing to upload again.</p>
+    </div>
+
+    <div class="svc-group">
+      <h2>Work with {{ cfg.OWNER_NAME }}</h2>
+      <p>One-to-one time with someone who has built marketing engines for startups and scale-ups.</p>
+      <div class="grid two">
+        {{ svc('call', '/book/call', 'Book a call') }}
+        {{ svc('audit', '/book/audit', 'Book an audit') }}
+      </div>
+    </div>
+
+    <div class="svc-group">
+      <h2>For colleges, bootcamps and companies</h2>
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap">
+        <div style="max-width:640px">
+          <h3 style="margin-top:0">🎓 Placement-ready resumes for your whole batch</h3>
+          <p>Bulk plans for placement cells, bootcamps and outplacement teams, with volume pricing, a GST invoice and an optional workshop.</p>
+        </div>
+        <a class="btn" href="/colleges">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

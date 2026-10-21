@@ -100,6 +100,13 @@
       <div class="card"><div class="icon">{{ sv.icon }}</div><h3>{{ sv.title }}</h3><p>{{ sv.text }}</p></div>
       {% endfor %}
     </div>
+    <div class="card" style="margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="max-width:680px">
+        <h3 style="margin-top:0">🚀 Start with a marketing audit</h3>
+        <p>I review your brand, website, funnel and ads, then walk you through a written 90-day action plan. Rs {{ '{:,}'.format(cfg.PRICE_AUDIT) }}, one time.</p>
+      </div>
+      <a class="btn big" href="/book/audit">Book an audit</a>
+    </div>
   </div>
 </section>
 
@@ -143,6 +150,7 @@
         <li>Clean, ATS-friendly format</li>
         <li>Ready in minutes, editable for {{ cfg.EDIT_WINDOW_DAYS }} days</li>
         <li>Also: a LinkedIn profile makeover that gets you found by recruiters (Rs {{ cfg.PRICE_LINKEDIN }})</li>
+        <li>Interview prep, outreach messages, salary negotiation scripts and <a href="/book/call">1:1 career calls</a>: <a href="/services">see all services</a></li>
       </ul>
       <div class="p-actions">
         <a class="btn big gold" href="/build">Build my resume for Rs {{ cfg.PRICE_RUPEES }}</a>

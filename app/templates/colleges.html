@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Bulk resume plans for colleges and bootcamps | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}Placement-ready, job-tailored resumes for every student in your batch, with volume pricing for colleges, bootcamps and outplacement teams.{% endblock %}
+{% block content %}{% set form = form or {} %}
+<section class="block soft">
+  <div class="wrap narrow">
+    <div class="page-head" style="padding-top:0">
+      <h1>🎓 Placement-ready resumes for your whole batch</h1>
+      <p>For college placement cells, bootcamps, training institutes and HR teams running outplacement.</p>
+      <ul class="checks" style="margin-top:12px">
+        <li>Every student gets a tailored resume, cover letter and job-match score, built from their own details</li>
+        <li>Volume pricing well below the individual Rs {{ cfg.PRICE_RUPEES }} price</li>
+        <li>Optional LinkedIn makeovers and interview prep packs for the batch</li>
+        <li>Optional live workshop with {{ cfg.OWNER_NAME }} on personal branding and job search</li>
+        <li>GST invoice for your institution</li>
+      </ul>
+    </div>
+    {% if sent %}
+    <div class="form-card" style="margin:24px 0 60px;text-align:center">
+      <h2 style="color:var(--navy-dark);margin-top:0">✓ Thank you, we've got your enquiry</h2>
+      <p>{{ cfg.OWNER_NAME }} will get back to you within one working day with a proposal for your batch.</p>
+    </div>
+    {% else %}
+    <form class="form-card" method="post" action="/enquiry" style="margin:24px 0 60px">
+      {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+      <div class="row3">
+        <div><label for="name">Your name</label><input type="text" id="name" name="name" required value="{{ form.name or '' }}"></div>
+        <div><label for="email">Work email</label><input type="email" id="email" name="email" required value="{{ form.email or '' }}"></div>
+        <div><label for="phone">Phone</label><input type="tel" id="phone" name="phone" required value="{{ form.phone or '' }}" placeholder="+91"></div>
+      </div>
+      <div class="row3">
+        <div><label for="org">Institution or company</label><input type="text" id="org" name="org" required value="{{ form.org or '' }}"></div>
+        <div><label for="role">Your role</label><input type="text" id="role" name="role" value="{{ form.role or '' }}" placeholder="Placement officer"></div>
+        <div><label for="students">Students per year</label><input type="text" id="students" name="students" value="{{ form.students or '' }}" placeholder="For example: 300"></div>
+      </div>
+      <label for="details">What do you need? <span class="hint">(optional)</span></label>
+      <textarea id="details" name="details" rows="4" placeholder="For example: resumes for our final-year MBA batch before placements in December, plus a workshop.">{{ form.details or '' }}</textarea>
+      <button class="btn big" type="submit" style="width:100%;margin-top:22px">Send enquiry</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

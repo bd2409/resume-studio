@@ -4,12 +4,18 @@
 {% block content %}
 <div class="wrap narrow">
   <div class="form-card" style="margin:50px 0 70px;text-align:center">
-    <h1 style="color:var(--navy-dark);font-size:28px;margin-top:0">We hit a problem writing your resume</h1>
+    {% if expired %}
+    <h1 style="color:var(--navy-dark);font-size:28px;margin-top:0">This order has expired</h1>
+    <p style="color:var(--muted)">For your privacy, files are deleted {{ cfg.RETENTION_DAYS }} days after an order. If you need help, contact us at
+      <a href="mailto:{{ cfg.CONTACT_EMAIL }}">{{ cfg.CONTACT_EMAIL }}</a>.</p>
+    {% else %}
+    <h1 style="color:var(--navy-dark);font-size:28px;margin-top:0">We hit a problem with your order</h1>
     <p style="color:var(--muted)">Your payment is safe. Please try again; if it still doesn't work, contact us at
       <a href="mailto:{{ cfg.CONTACT_EMAIL }}">{{ cfg.CONTACT_EMAIL }}</a> and we'll fix it or refund you in full.</p>
     <form method="post" action="/order/{{ order.token }}/retry">
       <button class="btn big">Try again</button>
     </form>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

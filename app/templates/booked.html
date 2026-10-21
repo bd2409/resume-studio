@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block title %}Booking confirmed | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap narrow">
+  <div class="form-card" style="margin:50px 0 70px">
+    <h1 style="color:var(--navy-dark);font-size:28px;margin-top:0">✓ You're booked: {{ product.label }}</h1>
+    <p>Thank you, {{ order.customer_name.split()[0] }}. Your payment is confirmed and {{ cfg.OWNER_NAME }} has your details.</p>
+    {% if cfg.CALL_BOOKING_URL %}
+    <p><a class="btn big" href="{{ cfg.CALL_BOOKING_URL }}" target="_blank" rel="noopener">Pick a time for your call</a></p>
+    {% else %}
+    <p>{{ cfg.OWNER_NAME }} will email you at <strong>{{ order.email }}</strong> within one working day to fix a time that suits you.</p>
+    {% endif %}
+    <table class="summary-table" style="margin-top:18px">
+      {% for k, v in extra.items() if v %}<tr><td>{{ k.replace('_', ' ').capitalize() }}</td><td style="white-space:pre-wrap">{{ v }}</td></tr>{% endfor %}
+    </table>
+    <p style="font-size:13px;color:var(--muted);margin-top:18px">Questions? Email <a href="mailto:{{ cfg.CONTACT_EMAIL }}">{{ cfg.CONTACT_EMAIL }}</a>. Keep this page's link to come back to your booking.</p>
+  </div>
+</div>
+{% endblock %}

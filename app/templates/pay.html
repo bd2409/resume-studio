@@ -6,14 +6,15 @@
 <div class="wrap narrow">
   <div class="page-head">
     <h1>Almost there</h1>
-    <p>Pay securely and we'll start writing your resume right away.</p>
+    <p>{% if product.service %}Pay securely to confirm your booking.{% else %}Pay securely and we'll start right away.{% endif %}</p>
   </div>
   <div class="form-card" style="margin:24px 0 60px">
     <div id="pay-error" class="alert err" {% if not payment_failed %}style="display:none"{% endif %}>{% if payment_failed %}Your payment was not completed. If money was deducted, it will be confirmed automatically within a few minutes: refresh this page. Otherwise, please try again.{% endif %}</div>
     <table class="summary-table">
       <tr><td>Name</td><td>{{ order.customer_name }}</td></tr>
       <tr><td>Email</td><td>{{ order.email }}</td></tr>
-      <tr><td>Resumes uploaded</td><td>{{ file_count }}</td></tr>
+      {% if file_count %}<tr><td>Resumes uploaded</td><td>{{ file_count }}</td></tr>{% endif %}
+      {% if extra.company %}<tr><td>Company</td><td>{{ extra.company }}</td></tr>{% endif %}
       <tr><td>{{ product.label }}</td><td>Rs {{ '{:,}'.format((order.amount_paise // 100)) }}</td></tr>
     </table>
     {% if cashfree %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block title %}{{ product.label }} | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap narrow" style="max-width:860px">
+  <div class="page-head">
+    <h1>{{ pack.title }}</h1>
+    <p>{{ pack.intro }}</p>
+    <div class="download-row" style="margin-top:14px">
+      <a class="btn" href="/order/{{ order.token }}/download/pack-docx">Download as Word</a>
+      <button type="button" class="btn light" onclick="window.print()">Print or save as PDF</button>
+    </div>
+  </div>
+  {% if last_failed %}<div class="alert err">The last regeneration didn't work, so your previous version is shown. Please try again, or contact us.</div>{% endif %}
+
+  {% for sec in pack.sections %}{% set si = loop.index %}
+  <div class="pack-section">
+    <h2>{{ sec.heading }}</h2>
+    {% if sec.intro %}<p>{{ sec.intro }}</p>{% endif %}
+    {% for item in sec['items'] %}
+    <div class="li-section pack-item">
+      <h3>{{ item.title }} <button type="button" class="btn small light copy-btn" data-copy="i{{ si }}-{{ loop.index }}">Copy</button></h3>
+      <pre id="i{{ si }}-{{ loop.index }}">{{ item.body }}</pre>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <div style="margin:28px 0 0">{% include "_addons.html" %}</div>
+
+  {% if can_edit and regen_left %}
+  <div class="card no-print" style="margin:16px 0 60px">
+    <h3 style="margin-top:0">Want it different?</h3>
+    <p>Tell us what to change and we'll rewrite it. {{ regen_left }} regeneration{{ '' if regen_left == 1 else 's' }} left.</p>
+    <form method="post" action="/order/{{ order.token }}/regenerate" onsubmit="return confirm('Rewrite this pack? The current version will be replaced.')">
+      <input type="hidden" name="part" value="pack">
+      <textarea name="instructions" rows="3" style="width:100%" placeholder="For example: more questions on stakeholder management; make the answers shorter."></textarea>
+      <button class="btn light" style="margin-top:10px">Regenerate</button>
+    </form>
+  </div>
+  {% else %}<div style="height:50px"></div>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<style>@media print { nav.nav, footer, .copy-btn, .download-row, .no-print, .version-card { display: none !important; } .li-section { break-inside: avoid; border: 0; padding: 6px 0; } }</style>
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    const text = document.getElementById(btn.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(text); } catch (e) {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    const old = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = old, 1500);
+  });
+});
+</script>
+{% endblock %}

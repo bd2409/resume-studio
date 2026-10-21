@@ -3,20 +3,21 @@
 {% block content %}
 <div class="wrap narrow">
   <div class="page-head">
-    <h1>Build your resume</h1>
-    <p>Upload your resumes and tell us what you're aiming for. You get a finished resume and cover letter for Rs {{ cfg.PRICE_RUPEES }}, paid once on the next step.</p>
+    <h1>Let's get started</h1>
+    <p>Upload your resumes and tell us what you're aiming for. Pick what you'd like below; you pay once on the next step.</p>
   </div>
   <form class="form-card" method="post" action="/build" enctype="multipart/form-data" id="build-form" style="margin:24px 0 60px">
     {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
     {% set product = form.product or request.query_params.get('product') or 'resume' %}
-    {% if product not in ['resume', 'linkedin', 'bundle'] %}{% set product = 'resume' %}{% endif %}
+    {% if product not in cfg.CAREER_PRODUCTS %}{% set product = 'resume' %}{% endif %}
     <label>What would you like?</label>
     <div class="mode-pick prod-pick">
-      {% for key in ['resume', 'bundle', 'linkedin'] %}{% set pr = cfg.PRODUCTS[key] %}
-      <label class="mode{% if product == key %} on{% endif %}"><input type="radio" name="product" value="{{ key }}" {% if product == key %}checked{% endif %}>
-        <strong>{{ pr.label }}</strong><span>Rs {{ '{:,}'.format(pr.price) }}{% if key == 'bundle' %} · save Rs {{ '{:,}'.format(cfg.PRICE_RUPEES + cfg.PRICE_LINKEDIN - cfg.PRICE_BUNDLE) }}{% endif %}</span></label>
+      {% for key in cfg.CAREER_PRODUCTS %}{% set pr = cfg.PRODUCTS[key] %}
+      <label class="mode{% if product == key %} on{% endif %}" data-resume="{{ 1 if pr.resume else 0 }}"><input type="radio" name="product" value="{{ key }}" {% if product == key %}checked{% endif %}>
+        <strong>{{ pr.icon }} {{ pr.label }}</strong><span>Rs {{ '{:,}'.format(pr.price) }}{% if key == 'bundle' %} · save Rs {{ '{:,}'.format(cfg.PRICE_RUPEES + cfg.PRICE_LINKEDIN - cfg.PRICE_BUNDLE) }}{% elif key == 'premium' %} · reviewed by {{ cfg.OWNER_NAME }}{% endif %}</span></label>
       {% endfor %}
     </div>
+    <p class="prod-blurb" id="prod-blurb"></p>
     {% set mode = form.mode or request.query_params.get('mode') or 'tailor' %}
     <div class="mode-pick">
       <label class="mode{% if mode != 'improve' %} on{% endif %}"><input type="radio" name="mode" value="tailor" {% if mode != 'improve' %}checked{% endif %}>
@@ -36,6 +37,10 @@
     <div id="jd-block">
       <label for="job_description">Job description <span class="hint">(paste the full posting)</span></label>
       <textarea id="job_description" name="job_description" rows="10" placeholder="Paste the job title, responsibilities and requirements here">{{ form.job_description or '' }}</textarea>
+    </div>
+    <div id="offer-block">
+      <label for="offer_details">About your offer <span class="hint">(company, role, the offer, your current pay, any other offers or interviews)</span></label>
+      <textarea id="offer_details" name="offer_details" rows="5" placeholder="For example: Offer from ABC Fintech for Senior PM, Rs 32 LPA fixed + Rs 4 LPA variable. Current CTC Rs 26 LPA. Also in final round at XYZ. Notice period 60 days.">{{ form.offer_details or '' }}</textarea>
     </div>
     <div id="role-block">
       <label for="target_role">Role you're aiming for</label>
@@ -73,6 +78,9 @@
 {% endblock %}
 {% block scripts %}
 <script>
+const BLURBS = {};
+{% for key in cfg.CAREER_PRODUCTS %}BLURBS[{{ key | tojson }}] = {{ cfg.PRODUCTS[key].blurb | tojson }};
+{% endfor %}
 (function () {
   const modes = document.querySelectorAll('input[name=mode]');
   function syncMode() {
@@ -81,8 +89,12 @@
     document.getElementById('job_description').required = !improve;
     document.getElementById('target_role').required = improve;
     document.querySelectorAll('.mode').forEach(l => l.classList.toggle('on', l.querySelector('input').checked));
-    const product = document.querySelector('input[name=product]:checked').value;
-    document.getElementById('design-block').style.display = product === 'linkedin' ? 'none' : '';
+    const picked = document.querySelector('input[name=product]:checked');
+    const product = picked.value;
+    document.getElementById('design-block').style.display = picked.parentElement.dataset.resume === '1' ? '' : 'none';
+    document.getElementById('offer-block').style.display = product === 'salary' ? '' : 'none';
+    document.getElementById('offer_details').required = product === 'salary';
+    document.getElementById('prod-blurb').textContent = BLURBS[product] || '';
     document.getElementById('submit').textContent = 'Continue to payment';
   }
   modes.forEach(m => m.addEventListener('change', syncMode));

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ product.label }} | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap narrow">
+  <div class="page-head">
+    <h1>{{ product.icon }} {{ product.label }}</h1>
+    <p>{{ product.blurb }} <strong>Rs {{ '{:,}'.format(product.price) }}</strong>, paid on the next step.</p>
+    {% if key == 'call' %}
+    <ul class="checks" style="margin-top:12px">
+      <li>45 minutes on video with {{ cfg.OWNER_NAME }}, at a time that suits you</li>
+      <li>Your positioning, target roles, job-search plan or career switch, worked through together</li>
+      <li>A short written summary of the action plan after the call</li>
+    </ul>
+    {% else %}
+    <ul class="checks" style="margin-top:12px">
+      <li>A review of your brand, positioning, website, funnel, ads and social presence</li>
+      <li>A written audit with the biggest gaps and a 90-day action plan, prioritised by impact</li>
+      <li>A 60-minute call with {{ cfg.OWNER_NAME }} to walk through it, within 7 working days</li>
+    </ul>
+    {% endif %}
+  </div>
+  <form class="form-card" method="post" action="/book/{{ key }}" enctype="multipart/form-data" style="margin:24px 0 60px">
+    {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+    <div class="row3">
+      <div><label for="customer_name">Your full name</label><input type="text" id="customer_name" name="customer_name" required value="{{ form.customer_name or '' }}"></div>
+      <div><label for="email">Email</label><input type="email" id="email" name="email" required value="{{ form.email or '' }}"></div>
+      <div><label for="phone">Phone</label><input type="tel" id="phone" name="phone" required value="{{ form.phone or '' }}" placeholder="+91"></div>
+    </div>
+    {% for name, label, required in fields %}
+    <label for="{{ name }}">{{ label }}</label>
+    {% if name in ('topic', 'goals', 'channels', 'preferred_times') %}
+    <textarea id="{{ name }}" name="{{ name }}" rows="{{ 4 if name in ('topic', 'goals') else 2 }}" {% if required %}required{% endif %}>{{ form[name] or '' }}</textarea>
+    {% else %}
+    <input type="text" id="{{ name }}" name="{{ name }}" {% if required %}required{% endif %} value="{{ form[name] or '' }}">
+    {% endif %}
+    {% endfor %}
+    {% if key == 'call' %}
+    <label for="resumes">Your resume <span class="hint">(optional, helps {{ cfg.OWNER_NAME }} prepare)</span></label>
+    <input type="file" id="resumes" name="resumes" accept=".pdf,.doc,.docx,.rtf,.odt,.txt">
+    {% endif %}
+    <label class="check" style="margin-top:22px">
+      <input type="checkbox" name="consent" value="yes" required>
+      <span>I agree to the <a href="/terms" target="_blank">terms</a>, <a href="/refund-policy" target="_blank">refund policy</a> and <a href="/privacy" target="_blank">privacy policy</a>.</span>
+    </label>
+    <button class="btn big" type="submit" style="width:100%;margin-top:24px">Continue to payment</button>
+  </form>
+</div>
+{% endblock %}

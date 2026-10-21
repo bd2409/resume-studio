@@ -44,6 +44,12 @@
         </div>
       </div>
       {% endif %}
+      {% if product.human %}
+      <div class="card cover-card premium-note">
+        <strong>🤝 {{ cfg.OWNER_NAME }} is reviewing your resume personally</strong>
+        <p>You'll get the reviewed version on this page and an email within 2 working days. Then we'll have your 15-minute call.{% if cfg.CALL_BOOKING_URL %} <a href="{{ cfg.CALL_BOOKING_URL }}" target="_blank" rel="noopener">Pick a time for the call</a>.{% endif %}</p>
+      </div>
+      {% endif %}
       {% if has_linkedin %}
       <a class="card cover-card li-card" href="/order/{{ order.token }}/linkedin">
         <strong>Your new LinkedIn profile →</strong>
@@ -69,6 +75,7 @@
           <button class="btn small">Continue to payment</button>
         </form>
       </details>
+      {% include "_addons.html" %}
       {% if notes.gap_notes %}
       <div class="alert warn notes">
         <strong>Worth checking:</strong> the job asks for these, but your resumes don't show them. Add them only if they're true.

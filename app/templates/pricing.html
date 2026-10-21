@@ -55,6 +55,18 @@
       <a class="btn big" href="/build?product=linkedin" style="width:100%">Upgrade my LinkedIn</a>
     </div>
     </div>
+
+    <div class="section-title" style="margin-top:60px">
+      <h2>More services</h2>
+      <p>Each one is a one-time payment.</p>
+    </div>
+    <table class="compare" style="max-width:820px;margin:0 auto">
+      <tr><th>Service</th><th>What you get</th><th>Price</th></tr>
+      {% for key in ['premium', 'interview', 'outreach', 'salary', 'content', 'call', 'audit'] %}{% set pr = cfg.PRODUCTS[key] %}
+      <tr><td><a href="{{ '/book/' ~ key if pr.service else '/build?product=' ~ key }}"><strong>{{ pr.icon }} {{ pr.label }}</strong></a></td><td>{{ pr.blurb }}</td><td style="white-space:nowrap"><strong>Rs {{ '{:,}'.format(pr.price) }}</strong></td></tr>
+      {% endfor %}
+      <tr><td><a href="/colleges"><strong>🎓 Colleges and bootcamps</strong></a></td><td>Resumes for a whole batch, with volume pricing</td><td><a href="/colleges">Ask us</a></td></tr>
+    </table>
   </div>
 </section>
 {% endblock %}

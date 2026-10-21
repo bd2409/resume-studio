@@ -53,13 +53,61 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 # Signs login cookies. Set a long random value in production so logins survive restarts.
 SECRET_KEY = os.getenv("SECRET_KEY", "") or os.getenv("ADMIN_PASSWORD", "") or __import__("secrets").token_hex(32)
 
-# What customers can buy. "resume" and "linkedin" say which deliverables an order produces.
+# What customers can buy. "resume" and "linkedin" say which deliverables an order produces, "pack" names an
+# AI-written pack (see ai.PACKS), "service" marks work Bhargab does personally (no AI), and "human" adds his review.
 PRICE_LINKEDIN = int(os.getenv("PRICE_LINKEDIN", "799"))
 PRICE_BUNDLE = int(os.getenv("PRICE_BUNDLE", "1099"))
 PRICE_VERSION = int(os.getenv("PRICE_VERSION", "199"))
+PRICE_INTERVIEW = int(os.getenv("PRICE_INTERVIEW", "499"))
+PRICE_OUTREACH = int(os.getenv("PRICE_OUTREACH", "399"))
+PRICE_SALARY = int(os.getenv("PRICE_SALARY", "299"))
+PRICE_CONTENT = int(os.getenv("PRICE_CONTENT", "999"))
+PRICE_PREMIUM = int(os.getenv("PRICE_PREMIUM", "2999"))
+PRICE_CALL = int(os.getenv("PRICE_CALL", "1999"))
+PRICE_AUDIT = int(os.getenv("PRICE_AUDIT", "7999"))
+
+# Optional scheduling link (Calendly, Google Calendar booking page, ...) shown after a call is paid for.
+CALL_BOOKING_URL = os.getenv("CALL_BOOKING_URL", "")
+# Where new bookings, premium orders and enquiries are sent.
+OWNER_EMAIL = os.getenv("OWNER_EMAIL", CONTACT_EMAIL)
+
+
+def _product(label, price, icon, blurb, **flags):
+    base = {"resume": False, "linkedin": False, "pack": None, "service": False, "human": False}
+    return {**base, "label": label, "price": price, "icon": icon, "blurb": blurb, **flags}
+
+
 PRODUCTS = {
-    "resume": {"label": "Resume + cover letter", "price": PRICE_RUPEES, "resume": True, "linkedin": False},
-    "linkedin": {"label": "LinkedIn profile makeover", "price": PRICE_LINKEDIN, "resume": False, "linkedin": True},
-    "bundle": {"label": "Resume + cover letter + LinkedIn makeover", "price": PRICE_BUNDLE, "resume": True, "linkedin": True},
-    "version": {"label": "Extra job version (resume + cover letter)", "price": PRICE_VERSION, "resume": True, "linkedin": False},
+    "resume": _product("Resume + cover letter", PRICE_RUPEES, "📄",
+                       "Tailored to the job, with a job-match score.", resume=True),
+    "linkedin": _product("LinkedIn profile makeover", PRICE_LINKEDIN, "💼",
+                         "Headline, About, experience and skills rewritten so recruiters find you.", linkedin=True),
+    "bundle": _product("Resume + cover letter + LinkedIn makeover", PRICE_BUNDLE, "⭐",
+                       "One consistent story everywhere recruiters look.", resume=True, linkedin=True),
+    "version": _product("Extra job version (resume + cover letter)", PRICE_VERSION, "➕",
+                        "A new tailored resume and cover letter for another job.", resume=True),
+    "premium": _product("Done-with-you premium resume", PRICE_PREMIUM, "🤝",
+                        "Resume, cover letter and LinkedIn makeover, personally reviewed by Bhargab, plus a 15-minute call.",
+                        resume=True, linkedin=True, human=True),
+    "interview": _product("Interview prep pack", PRICE_INTERVIEW, "🎯",
+                          "Likely questions with model answers from your real experience, your intro pitch and questions to ask.",
+                          pack="interview"),
+    "outreach": _product("Cold outreach pack", PRICE_OUTREACH, "✉️",
+                         "Emails and LinkedIn messages to hiring managers, recruiters and referrals, ready to send.",
+                         pack="outreach"),
+    "salary": _product("Salary negotiation script", PRICE_SALARY, "💰",
+                       "What to say on the call and by email to raise your offer, with replies to common pushbacks.",
+                       pack="salary"),
+    "content": _product("LinkedIn content kit (30 days)", PRICE_CONTENT, "📣",
+                        "12 ready-to-post LinkedIn posts from your real work, hooks and a 30-day calendar.",
+                        pack="content"),
+    "call": _product("1:1 career strategy call (45 min)", PRICE_CALL, "📞",
+                     "A video call with Bhargab on your next move, positioning, job search or switch.", service=True),
+    "audit": _product("Startup marketing audit", PRICE_AUDIT, "🚀",
+                      "Bhargab reviews your brand, website, funnel and ads, then walks you through a written action plan.",
+                      service=True),
 }
+# Products sold through the resume upload form, in display order.
+CAREER_PRODUCTS = ["resume", "bundle", "linkedin", "premium", "interview", "outreach", "salary", "content"]
+# Packs a customer can add to an existing order without uploading again.
+ADDONS = ["linkedin", "interview", "outreach", "salary", "content"]

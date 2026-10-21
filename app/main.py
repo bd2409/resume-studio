@@ -99,8 +99,23 @@ def product_of(order):
     return config.PRODUCTS.get(order.get("product") or "resume", config.PRODUCTS["resume"])
 
 
+def extra_of(order):
+    return json.loads(order.get("extra_json") or "{}")
+
+
+def owner_alert(order, what):
+    product = product_of(order)
+    lines = [f"{what}: {product['label']} (Rs {order['amount_paise'] // 100})",
+             f"{order['customer_name']} · {order['email']} · {order['phone']}"]
+    lines += [f"{k.replace('_', ' ').capitalize()}: {v}" for k, v in extra_of(order).items() if v]
+    if order.get("target_role"):
+        lines.append(f"Target role: {order['target_role']}")
+    lines.append(f"{config.SITE_URL}/order/{order['token']}")
+    mailer.owner_alert(f"{what}: {product['label']} - {order['customer_name']}", lines)
+
+
 def run_generation(order_id, instructions="", part="all"):
-    """part: "all" on first run, or "resume" / "linkedin" when the customer regenerates one deliverable."""
+    """part: "all" on first run, or "resume" / "linkedin" / "pack" when the customer regenerates one deliverable."""
     with _generation_lock:
         if order_id in _running:
             return
@@ -108,9 +123,17 @@ def run_generation(order_id, instructions="", part="all"):
     try:
         order = db.get_by_id(order_id)
         product = product_of(order)
+        if product["service"]:
+            # Calls and audits are done by Bhargab himself: confirm the booking and tell him.
+            if order["status"] in ("paid", "generating"):
+                db.update(order_id, status="ready", progress="")
+                mailer.booking_confirmed(order)
+                owner_alert(order, "New booking")
+            return
         do_resume = product["resume"] and part in ("all", "resume")
         do_linkedin = product["linkedin"] and part in ("all", "linkedin")
-        first_time = not order["resume_json"] and not order["linkedin_json"]
+        do_pack = bool(product["pack"]) and part in ("all", "pack")
+        first_time = not order["resume_json"] and not order["linkedin_json"] and not order["pack_json"]
         db.update(order_id, status="generating", error="", progress="Reading your resumes")
         updates = {}
         if config.AI_MODE == "mock":
@@ -121,6 +144,8 @@ def run_generation(order_id, instructions="", part="all"):
                     updates["cover_json"] = ai.mock_cover_letter(resume).model_dump_json()
             if do_linkedin:
                 updates["linkedin_json"] = ai.mock_linkedin().model_dump_json()
+            if do_pack:
+                updates["pack_json"] = ai.mock_pack(product["pack"]).model_dump_json()
         else:
             if order["profile_json"]:
                 profile = Profile.model_validate_json(order["profile_json"])
@@ -141,6 +166,10 @@ def run_generation(order_id, instructions="", part="all"):
             if do_linkedin:
                 db.update(order_id, progress="Rewriting your LinkedIn profile")
                 updates["linkedin_json"] = ai.write_linkedin(profile, job, instructions).model_dump_json()
+            if do_pack:
+                db.update(order_id, progress=f"Writing your {product['label'].lower()}")
+                details = extra_of(order).get("offer_details", "")
+                updates["pack_json"] = ai.write_pack(product["pack"], profile, job, details, instructions).model_dump_json()
         if updates:
             db.update(order_id, **updates)
         if do_resume:
@@ -150,6 +179,8 @@ def run_generation(order_id, instructions="", part="all"):
         db.update(order_id, status="ready", progress="")
         if first_time:
             mailer.order_ready(db.get_by_id(order_id))
+            if product["human"]:
+                owner_alert(db.get_by_id(order_id), "Premium order to review")
     except Exception as exc:
         log.exception("Generation failed for %s", order_id)
         db.update(order_id, status="failed", progress="", error=str(exc)[:500])
@@ -199,6 +230,8 @@ STATIC_PAGES = {
     "/terms": "terms.html",
     "/privacy": "privacy.html",
     "/refund-policy": "refund.html",
+    "/services": "services.html",
+    "/colleges": "colleges.html",
 }
 
 
@@ -212,7 +245,7 @@ for _path, _template in STATIC_PAGES.items():
     app.add_api_route(_path, _static_page(_template), methods=["GET"], response_class=HTMLResponse)
 
 
-PUBLIC_PAGES = ["/", "/resume", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy"]
+PUBLIC_PAGES = ["/", "/resume", "/services", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy"]
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
@@ -308,17 +341,19 @@ async def build_submit(
     target_role: str = Form(""),
     consent: str = Form(None),
     template: str = Form(render.DEFAULT_TEMPLATE),
+    offer_details: str = Form(""),
     resumes: list[UploadFile] = File(...),
 ):
     if template not in render.TEMPLATES:
         template = render.DEFAULT_TEMPLATE
     mode = "improve" if mode == "improve" else "tailor"
-    if product not in ("resume", "linkedin", "bundle"):
+    if product not in config.CAREER_PRODUCTS:
         product = "resume"
     if mode == "improve":
         job_description = ""
     form = {"customer_name": customer_name, "email": email, "phone": phone, "job_description": job_description,
-            "template": template, "mode": mode, "target_role": target_role, "product": product}
+            "template": template, "mode": mode, "target_role": target_role, "product": product,
+            "offer_details": offer_details}
     resumes = [f for f in resumes if f.filename]
 
     def fail(msg):
@@ -334,33 +369,124 @@ async def build_submit(
         return fail("Please paste the full job description (at least a few lines).")
     if mode == "improve" and len(target_role.strip()) < 3:
         return fail("Please tell us the kind of role you're aiming for.")
+    if product == "salary" and len(offer_details.strip()) < 20:
+        return fail("Please tell us about the offer: the company, role and the numbers you have.")
     if not resumes:
         return fail("Please upload at least one resume.")
-    if len(resumes) > config.MAX_RESUMES:
-        return fail(f"You can upload at most {config.MAX_RESUMES} resumes.")
-
-    saved = []
-    for f in resumes:
-        ext = Path(f.filename).suffix.lower()
-        if ext not in ALLOWED_EXT:
-            return fail(f"{f.filename}: please upload PDF or Word files.")
-        data = await f.read()
-        if len(data) > config.MAX_FILE_MB * 1024 * 1024:
-            return fail(f"{f.filename} is larger than {config.MAX_FILE_MB} MB.")
-        saved.append((ext, data))
+    saved, error = await read_uploads(resumes)
+    if error:
+        return fail(error)
 
     order = db.create_order(customer_name.strip(), email.strip(), phone.strip(), job_description.strip(),
                             [], config.PRODUCTS[product]["price"] * 100)
-    up = order_dir(order["id"]) / "uploads"
+    extra = {"offer_details": offer_details.strip()[:3000]} if product == "salary" else {}
+    db.update(order["id"], files_json=json.dumps(store_uploads(order["id"], saved)), template=template,
+              target_role=target_role.strip()[:120], product=product, extra_json=json.dumps(extra),
+              user_email=current_user_email(request))
+    return RedirectResponse(f"/order/{order['token']}", status_code=303)
+
+
+async def read_uploads(files):
+    """Returns ([(ext, bytes)], error message or None)."""
+    if len(files) > config.MAX_RESUMES:
+        return [], f"You can upload at most {config.MAX_RESUMES} resumes."
+    saved = []
+    for f in files:
+        ext = Path(f.filename).suffix.lower()
+        if ext not in ALLOWED_EXT:
+            return [], f"{f.filename}: please upload PDF or Word files."
+        data = await f.read()
+        if len(data) > config.MAX_FILE_MB * 1024 * 1024:
+            return [], f"{f.filename} is larger than {config.MAX_FILE_MB} MB."
+        saved.append((ext, data))
+    return saved, None
+
+
+def store_uploads(order_id, saved):
+    up = order_dir(order_id) / "uploads"
     up.mkdir(parents=True, exist_ok=True)
     names = []
     for i, (ext, data) in enumerate(saved, 1):
         name = f"resume_{i}{ext}"
         (up / name).write_bytes(data)
         names.append(name)
-    db.update(order["id"], files_json=json.dumps(names), template=template, target_role=target_role.strip()[:120], product=product,
-              user_email=current_user_email(request))
+    return names
+
+
+BOOKING_FIELDS = {
+    "call": [("topic", "What would you like to discuss?", True), ("linkedin_url", "Your LinkedIn profile (optional)", False),
+             ("preferred_times", "Days and times that suit you", False)],
+    "audit": [("company", "Company or brand name", True), ("website", "Website or app link", True),
+              ("stage", "Stage and size (for example: seed, 12 people, Rs 40 lakh monthly revenue)", True),
+              ("goals", "What do you want marketing to achieve in the next 6 months?", True),
+              ("channels", "What are you doing in marketing today? (optional)", False)],
+}
+
+
+@app.get("/book/{product}", response_class=HTMLResponse)
+def book_form(request: Request, product: str):
+    if product not in BOOKING_FIELDS:
+        raise HTTPException(404)
+    return page(request, "book.html", key=product, product=config.PRODUCTS[product],
+                fields=BOOKING_FIELDS[product], error=None, form={})
+
+
+@app.post("/book/{product}", response_class=HTMLResponse)
+async def book_submit(request: Request, product: str):
+    if product not in BOOKING_FIELDS:
+        raise HTTPException(404)
+    f = await request.form()
+    g = lambda k: (f.get(k) or "").strip() if isinstance(f.get(k), str) else ""  # noqa: E731
+    form = {k: g(k) for k in ["customer_name", "email", "phone"] + [n for n, _, _ in BOOKING_FIELDS[product]]}
+
+    def fail(msg):
+        return page(request, "book.html", key=product, product=config.PRODUCTS[product],
+                    fields=BOOKING_FIELDS[product], error=msg, form=form)
+
+    if not g("consent"):
+        return fail("Please agree to the terms and privacy policy to continue.")
+    if len(form["customer_name"]) < 2:
+        return fail("Please enter your name.")
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", form["email"]):
+        return fail("Please enter a valid email address.")
+    if len(re.sub(r"\D", "", form["phone"])) < 10:
+        return fail("Please enter a valid phone number.")
+    for name, label, required in BOOKING_FIELDS[product]:
+        if required and len(form[name]) < 2:
+            return fail(f"Please fill in: {label}")
+    files = [x for x in f.getlist("resumes") if getattr(x, "filename", "")]
+    saved, error = await read_uploads(files)
+    if error:
+        return fail(error)
+    order = db.create_order(form["customer_name"], form["email"], form["phone"], "", [],
+                            config.PRODUCTS[product]["price"] * 100)
+    extra = {name: form[name][:2000] for name, _, _ in BOOKING_FIELDS[product]}
+    db.update(order["id"], product=product, extra_json=json.dumps(extra), user_email=current_user_email(request),
+              files_json=json.dumps(store_uploads(order["id"], saved)) if saved else "[]")
     return RedirectResponse(f"/order/{order['token']}", status_code=303)
+
+
+@app.post("/enquiry", response_class=HTMLResponse)
+async def enquiry(request: Request):
+    """College, bootcamp and company enquiries for bulk plans. No payment; Bhargab follows up."""
+    f = await request.form()
+    g = lambda k: (f.get(k) or "").strip()[:2000]  # noqa: E731
+    form = {k: g(k) for k in ("name", "email", "phone", "org", "role", "students", "details")}
+    error = None
+    if len(form["name"]) < 2 or len(form["org"]) < 2:
+        error = "Please enter your name and your institution."
+    elif not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", form["email"]):
+        error = "Please enter a valid email address."
+    elif len(re.sub(r"\D", "", form["phone"])) < 10:
+        error = "Please enter a valid phone number."
+    if error:
+        return page(request, "colleges.html", error=error, form=form)
+    details = f"Role: {form['role']}\nStudents per year: {form['students']}\n{form['details']}"
+    db.add_enquiry("college", form["name"], form["email"], form["phone"], form["org"], details)
+    mailer.owner_alert(f"College enquiry: {form['org']}",
+                       [f"{form['name']} ({form['role']}) · {form['email']} · {form['phone']}", form["org"],
+                        f"Students per year: {form['students']}", form["details"]])
+    return page(request, "colleges.html", sent=True, form={})
 
 
 def is_owner(request: Request):
@@ -386,17 +512,24 @@ def checkout_open(request: Request):
 def order_page(request: Request, token: str):
     order = load_order(token)
     status = order["status"]
+    product = product_of(order)
     if status == "awaiting_payment":
         return page(request, "pay.html", order=order, cashfree=checkout_open(request), cf_mode=payments.mode(),
                     payment_failed=request.query_params.get("payment") == "failed",
                     dev_skip=config.DEV_SKIP_PAYMENT, file_count=len(json.loads(order["files_json"])),
-                    product=product_of(order))
+                    product=product, extra=extra_of(order))
     if status in ("paid", "generating"):
         return page(request, "progress.html", order=order)
-    if status == "failed" and not order["resume_json"] and not order["linkedin_json"]:
+    if product["service"]:
+        return page(request, "booked.html", order=order, product=product, extra=extra_of(order))
+    if status == "failed" and not (order["resume_json"] or order["linkedin_json"] or order["pack_json"]):
         return page(request, "failed.html", order=order)
     if not order["resume_json"]:
-        return RedirectResponse(f"/order/{token}/linkedin", status_code=303)
+        if order["linkedin_json"]:
+            return RedirectResponse(f"/order/{token}/linkedin", status_code=303)
+        if order["pack_json"]:
+            return RedirectResponse(f"/order/{token}/pack", status_code=303)
+        return page(request, "failed.html", order=order, expired=True)
     resume = Resume.model_validate_json(order["resume_json"])
     notes = json.loads(order["notes_json"] or "{}")
     previews = sorted(order_dir(order["id"]).glob("preview-*.png"))
@@ -406,7 +539,26 @@ def order_page(request: Request, token: str):
                 can_edit=editable(order),
                 regen_left=max(0, config.MAX_REGENERATIONS - order["regenerations"]),
                 version=int(time.time()), last_failed=status == "failed",
-                product=product_of(order), has_linkedin=bool(order["linkedin_json"]))
+                product=product, has_linkedin=bool(order["linkedin_json"]), addons=addons_for(order))
+
+
+def addons_for(order):
+    """Packs this customer can add without uploading again (only ones the order doesn't already include)."""
+    if not order["paid_at"] or not order["files_json"] or order["files_json"] == "[]":
+        return []
+    own = product_of(order)
+    return [(k, config.PRODUCTS[k]) for k in config.ADDONS
+            if not (k == "linkedin" and own["linkedin"]) and own["pack"] != k]
+
+
+@app.get("/order/{token}/pack", response_class=HTMLResponse)
+def pack_page(request: Request, token: str):
+    order = load_order(token)
+    if not order["pack_json"] or order["status"] in ("awaiting_payment", "paid", "generating"):
+        return RedirectResponse(f"/order/{token}", status_code=303)
+    return page(request, "pack.html", order=order, pack=json.loads(order["pack_json"]), product=product_of(order),
+                can_edit=editable(order), regen_left=max(0, config.MAX_REGENERATIONS - order["regenerations"]),
+                last_failed=order["status"] == "failed", addons=addons_for(order))
 
 
 @app.get("/order/{token}/linkedin", response_class=HTMLResponse)
@@ -418,25 +570,39 @@ def linkedin_page(request: Request, token: str):
     li = LinkedInProfile.model_validate_json(order["linkedin_json"])
     return page(request, "linkedin.html", order=order, li=li, product=product_of(order),
                 can_edit=editable(order), regen_left=max(0, config.MAX_REGENERATIONS - order["regenerations"]),
-                last_failed=order["status"] == "failed")
+                last_failed=order["status"] == "failed", addons=addons_for(order))
 
 
 @app.post("/order/{token}/new-version")
 def new_version(token: str, job_description: str = Form(...)):
     """A paid follow-up: same customer and fact bank, a new job description, a new resume and cover letter."""
-    parent = load_order(token)
-    if not parent["paid_at"]:
-        raise HTTPException(400, "This order can't be used for a new version")
     if len(job_description.strip()) < 150:
         raise HTTPException(400, "Please paste the full job description")
-    child = db.create_order(parent["customer_name"], parent["email"], parent["phone"], job_description.strip(),
-                            [], config.PRICE_VERSION * 100)
+    return _child_order(load_order(token), "version", job_description.strip())
+
+
+@app.post("/order/{token}/addon")
+def addon(token: str, product: str = Form(...), offer_details: str = Form("")):
+    """Adds a pack (interview prep, outreach, ...) built from the same resumes and target job."""
+    parent = load_order(token)
+    if product not in dict(addons_for(parent)):
+        raise HTTPException(400, "This add-on isn't available for this order")
+    extra = {"offer_details": offer_details.strip()[:3000]} if product == "salary" else {}
+    return _child_order(parent, product, parent["job_description"], extra)
+
+
+def _child_order(parent, product, job_description, extra=None):
+    """Same customer and fact bank as a paid order; nothing to upload again."""
+    if not parent["paid_at"] or parent["files_json"] in (None, "", "[]"):
+        raise HTTPException(400, "This order can't be used for that")
+    child = db.create_order(parent["customer_name"], parent["email"], parent["phone"], job_description,
+                            [], config.PRODUCTS[product]["price"] * 100)
     src, dst = order_dir(parent["id"]) / "uploads", order_dir(child["id"]) / "uploads"
     if src.exists():
         shutil.copytree(src, dst)
     db.update(child["id"], files_json=parent["files_json"], profile_json=parent["profile_json"],
-              template=parent["template"], user_email=parent["user_email"], product="version",
-              parent_id=parent["id"])
+              template=parent["template"], target_role=parent["target_role"], user_email=parent["user_email"],
+              product=product, parent_id=parent["id"], extra_json=json.dumps(extra or {}))
     return RedirectResponse(f"/order/{child['token']}", status_code=303)
 
 
@@ -596,9 +762,9 @@ def regenerate(token: str, background: BackgroundTasks, instructions: str = Form
     if order["status"] not in ("ready", "failed"):
         return RedirectResponse(f"/order/{token}", status_code=303)
     db.update(order["id"], regenerations=order["regenerations"] + 1)
-    part = "linkedin" if part == "linkedin" else "resume"
+    part = part if part in ("linkedin", "pack") else "resume"
     start_generation(background, order["id"], instructions.strip()[:1000], part)
-    return RedirectResponse(f"/order/{token}" + ("/linkedin" if part == "linkedin" else ""), status_code=303)
+    return RedirectResponse(f"/order/{token}" + ("" if part == "resume" else "/" + part), status_code=303)
 
 
 @app.get("/order/{token}/download/{kind}")
@@ -606,6 +772,13 @@ def download(token: str, kind: str, inline: int = 0):
     order = load_order(token)
     docx_path, pdf_path = output_paths(order)
     cover_docx, cover_pdf = cover_paths(order)
+    if kind == "pack-docx" and order["pack_json"]:
+        pack = json.loads(order["pack_json"])
+        safe = re.sub(r"[^A-Za-z0-9]+", "_", f"{order['customer_name']} {product_of(order)['label']}").strip("_")
+        out = order_dir(order["id"]) / f"{safe}.docx"
+        render.build_pack(pack, out, order["customer_name"])
+        return FileResponse(out, filename=out.name, headers={"Cache-Control": "no-store"},
+                            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     path = {"docx": docx_path, "pdf": pdf_path, "cover-docx": cover_docx, "cover-pdf": cover_pdf}.get(kind)
     if not path or not path.exists():
         raise HTTPException(404, "File not found")
@@ -637,4 +810,8 @@ def admin_auth(creds: HTTPBasicCredentials = Depends(security)):
 
 @app.get("/admin", response_class=HTMLResponse, dependencies=[Depends(admin_auth)])
 def admin(request: Request):
-    return page(request, "admin.html", orders=db.recent())
+    orders = db.recent()
+    for o in orders:
+        o["label"] = product_of(o)["label"]
+        o["extra"] = json.loads(o["extra_json"] or "{}")
+    return page(request, "admin.html", orders=orders, enquiries=db.enquiries())

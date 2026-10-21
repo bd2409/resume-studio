@@ -124,3 +124,20 @@ class LinkedInProfile(BaseModel):
     featured_ideas: List[str] = Field(description="3 to 5 ideas for the Featured section, based only on their real work")
     banner_tagline: str = Field(description="A short line for a profile banner image, under 60 characters")
     tips: List[str] = Field(description="3 to 6 specific, practical tips to improve this profile's reach with recruiters")
+
+
+class PackItem(BaseModel):
+    title: str = Field(description="Short label, e.g. the interview question, the message's purpose or the post's hook")
+    body: str = Field(description="The ready-to-use text. Plain text; short paragraphs separated by blank lines; '-' for list lines")
+
+
+class PackSection(BaseModel):
+    heading: str
+    intro: str = Field(description="One or two sentences on how to use this section; may be empty")
+    items: List[PackItem]
+
+
+class Pack(BaseModel):
+    title: str = Field(description="Title for this person's pack, e.g. 'Interview prep: Senior Product Manager, fintech'")
+    intro: str = Field(description="Two or three sentences on how to use the pack")
+    sections: List[PackSection]
