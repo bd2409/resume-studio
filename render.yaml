@@ -1,0 +1,42 @@
+# Render blueprint: one Docker web service with a persistent disk for orders and files.
+services:
+  - type: web
+    name: resume-studio
+    runtime: docker
+    plan: starter
+    healthCheckPath: /healthz
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 2
+    envVars:
+      - key: SITE_NAME
+        value: Resume Studio
+      - key: SITE_URL
+        sync: false
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: CONTACT_PHONE
+        sync: false
+      - key: BUSINESS_ADDRESS
+        sync: false
+      - key: OWNER_NAME
+        value: Bhargab
+      - key: PRICE_RUPEES
+        value: "500"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: DEV_SKIP_PAYMENT
+        value: "false"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: ADMIN_PASSWORD
+        generateValue: true

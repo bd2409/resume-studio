@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Pricing | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="block soft">
+  <div class="wrap">
+    <div class="section-title">
+      <h2>Simple pricing</h2>
+      <p>One price per tailored resume. No subscription.</p>
+    </div>
+    <div class="card price-card">
+      <h3>Tailored resume</h3>
+      <div class="price">Rs {{ cfg.PRICE_RUPEES }} <small>per resume</small></div>
+      <ul class="checks">
+        <li>Written for one specific job description</li>
+        <li>Built from up to {{ cfg.MAX_RESUMES }} of your existing resumes</li>
+        <li>Every line checked against your real experience</li>
+        <li>ATS-friendly, recruiter-approved format</li>
+        <li>Editable Word file and PDF</li>
+        <li>Unlimited edits for {{ cfg.EDIT_WINDOW_DAYS }} days</li>
+        <li>Up to {{ cfg.MAX_REGENERATIONS }} free regenerations with your instructions</li>
+      </ul>
+      <a class="btn big" href="/build" style="width:100%">Build my resume</a>
+      <p style="color:var(--muted);font-size:13px;margin-top:12px">Applying to a different job? Each new job description is a new resume.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

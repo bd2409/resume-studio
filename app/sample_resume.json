@@ -1,0 +1,83 @@
+{
+  "header": {
+    "name": "Priya Sharma",
+    "headline": "Senior Product Manager | B2B SaaS | Payments & Fintech Platforms",
+    "email": "priya.sharma@email.com",
+    "phone": "+91 98765 43210",
+    "linkedin": "linkedin.com/in/priyasharma",
+    "location": "Bengaluru, India"
+  },
+  "competencies": [
+    "Product Strategy & Roadmaps",
+    "Payments (UPI, Cards, NACH)",
+    "B2B SaaS Platforms",
+    "Stakeholder Management",
+    "Data Analysis (SQL, Mixpanel)",
+    "A/B Testing & Experimentation",
+    "Agile / Scrum Delivery",
+    "RBI Compliance & Risk",
+    "Go-to-Market Planning"
+  ],
+  "experience": [
+    {
+      "company": "PayNova Technologies",
+      "location": "Bengaluru",
+      "title": "Senior Product Manager, Merchant Payments",
+      "dates": "Apr 2021 - Present",
+      "context": "Series D fintech serving 2M+ small and mid-size merchants.",
+      "bullets": [
+        "Recurring payments: Launched UPI AutoPay and e-mandate flows, adding Rs 1,200 Cr in annual processed volume within 12 months.",
+        "Onboarding: Redesigned merchant KYC journey with a team of 14, cutting activation time from 5 days to 36 hours and lifting conversion by 22%.",
+        "Risk: Built a real-time fraud rules dashboard with the risk team, reducing chargeback losses by 31% year on year.",
+        "Mentored 3 associate PMs and set up a quarterly OKR process adopted across the payments org."
+      ]
+    },
+    {
+      "company": "Zentrix Software",
+      "location": "Pune",
+      "title": "Product Manager, Billing Platform",
+      "dates": "Jul 2018 - Mar 2021",
+      "bullets": [
+        "Owned the subscription billing product for 900+ enterprise clients; grew ARR from Rs 18 Cr to Rs 41 Cr.",
+        "Introduced usage-based pricing and invoicing APIs, shortening enterprise integration time by 40%.",
+        "Ran 25+ A/B tests on checkout and dunning flows, recovering 9% of previously failed payments."
+      ],
+      "context": ""
+    },
+    {
+      "company": "Infosys Limited",
+      "location": "Mysuru",
+      "title": "Business Analyst",
+      "dates": "Jun 2016 - Jun 2018",
+      "bullets": [
+        "Gathered requirements and wrote specifications for a core banking upgrade for a UK retail bank.",
+        "Built SQL reporting packs used weekly by client leadership to track migration progress."
+      ],
+      "context": ""
+    }
+  ],
+  "education": [
+    {
+      "degree": "MBA, Marketing & Strategy",
+      "institution": "Indian Institute of Management, Indore",
+      "dates": "2014 - 2016",
+      "grade": "CGPA 3.6 / 4.0"
+    },
+    {
+      "degree": "B.Tech, Computer Science",
+      "institution": "National Institute of Technology, Warangal",
+      "dates": "2010 - 2014",
+      "grade": "8.4 CGPA"
+    }
+  ],
+  "certifications": [
+    "Certified Scrum Product Owner (CSPO), Scrum Alliance, 2020",
+    "Product Analytics Certification, Pragmatic Institute, 2022",
+    "PayNova Star Performer Award, FY 2023-24"
+  ],
+  "achievements": [
+    "Speaker at Global Fintech Fest 2024 on recurring payments for small businesses.",
+    "Led the hackathon team that built PayNova's first WhatsApp payment link prototype, now a live product."
+  ],
+  "summary": "Senior Product Manager with 8+ years building B2B SaaS and payments products used by 2M+ merchants across India. Led end-to-end launches of UPI AutoPay, merchant onboarding and risk dashboards, growing processed volume by 3x in two years. Combines strong data and SQL skills with a track record of aligning engineering, design, compliance and sales teams around clear outcomes. Seeking to drive platform strategy for a high-growth fintech."
+}

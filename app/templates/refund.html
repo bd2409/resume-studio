@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Refund policy | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="block">
+  <div class="wrap narrow prose">
+    <h1>Refund and cancellation policy</h1>
+    <p>Each resume is created specifically for you as soon as you pay, so we handle refunds as follows.</p>
+    <h2>Full refund</h2>
+    <ul>
+      <li>If we cannot generate your resume because of a problem on our side.</li>
+      <li>If you were charged more than once for the same order.</li>
+    </ul>
+    <h2>Not refundable</h2>
+    <ul>
+      <li>Once your resume has been delivered, because the work is complete. Instead, use your free edits and regenerations for {{ cfg.EDIT_WINDOW_DAYS }} days, or contact us and we'll help improve it.</li>
+      <li>If the uploaded files are unreadable or not resumes. Contact us and we'll help you re-upload.</li>
+    </ul>
+    <h2>How to request a refund</h2>
+    <p>Email <a href="mailto:{{ cfg.CONTACT_EMAIL }}">{{ cfg.CONTACT_EMAIL }}</a> within 7 days of payment with the email address you used at checkout. Approved refunds are returned to your original payment method within 5 to 7 working days.</p>
+    <h2>Cancellation</h2>
+    <p>Orders can't be cancelled after payment because generation starts immediately.</p>
+  </div>
+</section>
+{% endblock %}

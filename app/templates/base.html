@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ cfg.SITE_NAME }} | Tailored resumes written for the job you want{% endblock %}</title>
+  <meta name="description" content="{% block description %}Upload your existing resumes and the job description. Get a professionally tailored, ATS-friendly resume in Word and PDF for Rs {{ cfg.PRICE_RUPEES }}.{% endblock %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css?v=1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f3a5f'/><text x='16' y='22' font-size='17' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>R</text></svg>">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="/">{{ cfg.SITE_NAME }}<span>.</span></a>
+    <button class="menu-toggle" aria-label="Menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+    <div class="nav-links">
+      <a href="/#how">How it works</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/faq">FAQ</a>
+      <a href="/contact">Contact</a>
+      <a class="btn small" href="/build">Build my resume</a>
+    </div>
+  </div>
+</nav>
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="brand">{{ cfg.SITE_NAME }}<span style="color:var(--accent)">.</span></div>
+      <p>Professional resumes tailored to the exact job you're applying for, written only from your real experience.</p>
+    </div>
+    <div>
+      <strong style="color:#fff">Service</strong>
+      <a href="/build">Build my resume</a>
+      <a href="/#how">How it works</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/faq">FAQ</a>
+    </div>
+    <div>
+      <strong style="color:#fff">Company</strong>
+      <a href="/contact">Contact</a>
+      <a href="/terms">Terms of service</a>
+      <a href="/privacy">Privacy policy</a>
+      <a href="/refund-policy">Refund policy</a>
+    </div>
+    <div class="copy">© {{ year }} {{ cfg.SITE_NAME }}. All rights reserved.</div>
+  </div>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

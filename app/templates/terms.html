@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Terms of service | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="block">
+  <div class="wrap narrow prose">
+    <h1>Terms of service</h1>
+    <p>These terms apply to the resume writing service offered by {{ cfg.SITE_NAME }} ("we", "us"), operated by {{ cfg.OWNER_NAME }}, {{ cfg.BUSINESS_ADDRESS }}. By placing an order you agree to them.</p>
+
+    <h2>1. The service</h2>
+    <p>You upload one or more of your existing resumes and a job description. We use software, including artificial intelligence, to produce a resume tailored to that job in our standard format, delivered as a Word (.docx) file and a PDF.</p>
+
+    <h2>2. Your responsibilities</h2>
+    <ul>
+      <li>You confirm that the resumes you upload are your own and that their contents are true.</li>
+      <li>You are responsible for reviewing the final resume and making sure every statement in it is accurate before you use it.</li>
+      <li>You will not upload anything unlawful or that you have no right to share.</li>
+    </ul>
+
+    <h2>3. Price and payment</h2>
+    <p>The price is Rs {{ cfg.PRICE_RUPEES }} per tailored resume, shown before payment. Payments are processed by Razorpay. Your order is processed once payment is confirmed.</p>
+
+    <h2>4. Edits and regenerations</h2>
+    <p>For {{ cfg.EDIT_WINDOW_DAYS }} days after payment you may edit your resume on the review page and regenerate it up to {{ cfg.MAX_REGENERATIONS }} times for the same job description. A different job description is a new order.</p>
+
+    <h2>5. No guarantee of outcome</h2>
+    <p>We work hard to make your resume as strong as possible, but we cannot guarantee interviews, job offers or any particular result.</p>
+
+    <h2>6. Intellectual property</h2>
+    <p>The resume content belongs to you. Our template design, website and software remain ours.</p>
+
+    <h2>7. Liability</h2>
+    <p>To the extent permitted by law, our total liability for any order is limited to the amount you paid for it.</p>
+
+    <h2>8. Refunds</h2>
+    <p>See our <a href="/refund-policy">refund policy</a>.</p>
+
+    <h2>9. Governing law</h2>
+    <p>These terms are governed by the laws of India. Contact us first at <a href="mailto:{{ cfg.CONTACT_EMAIL }}">{{ cfg.CONTACT_EMAIL }}</a> to resolve any issue.</p>
+  </div>
+</section>
+{% endblock %}

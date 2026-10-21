@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Writing your resume | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap narrow">
+  <div class="form-card progress-box" style="margin:50px 0 70px">
+    <div class="spinner"></div>
+    <h1 style="margin:0 0 6px;color:var(--navy-dark);font-size:28px">Writing your tailored resume</h1>
+    <p style="color:var(--muted);margin:0">This usually takes two to four minutes. You can keep this page open, or come back later using the link in your email.</p>
+    <ul class="steps-list" id="steps">
+      <li data-k="Reading">Reading your resumes</li>
+      <li data-k="Writing">Writing and checking your tailored resume</li>
+      <li data-k="Creating">Creating your Word and PDF files</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const items = Array.from(document.querySelectorAll('#steps li'));
+  function show(progress) {
+    let idx = items.findIndex(li => progress && progress.startsWith(li.dataset.k));
+    if (idx < 0) idx = 0;
+    items.forEach((li, i) => { li.className = i < idx ? 'done' : (i === idx ? 'now' : ''); });
+  }
+  show({{ order.progress | tojson }});
+  async function poll() {
+    try {
+      const r = await fetch('/order/{{ order.token }}/status', { cache: 'no-store' });
+      const d = await r.json();
+      if (d.status !== 'generating' && d.status !== 'paid') { location.reload(); return; }
+      show(d.progress);
+    } catch (e) {}
+    setTimeout(poll, 3000);
+  }
+  setTimeout(poll, 3000);
+})();
+</script>
+{% endblock %}

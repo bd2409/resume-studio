@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Payment | {{ cfg.SITE_NAME }}{% endblock %}
+{% block head %}{% if razorpay %}<script src="https://checkout.razorpay.com/v1/checkout.js"></script>{% endif %}{% endblock %}
+{% block content %}
+<div class="wrap narrow">
+  <div class="page-head">
+    <h1>Almost there</h1>
+    <p>Pay securely and we'll start writing your resume right away.</p>
+  </div>
+  <div class="form-card" style="margin:24px 0 60px">
+    <div id="pay-error" class="alert err" style="display:none"></div>
+    <table class="summary-table">
+      <tr><td>Name</td><td>{{ order.customer_name }}</td></tr>
+      <tr><td>Email</td><td>{{ order.email }}</td></tr>
+      <tr><td>Resumes uploaded</td><td>{{ file_count }}</td></tr>
+      <tr><td>Tailored resume (Word + PDF)</td><td>Rs {{ (order.amount_paise / 100) | int }}</td></tr>
+    </table>
+    {% if razorpay %}
+      <button class="btn big" id="pay-btn" style="width:100%">Pay Rs {{ (order.amount_paise / 100) | int }}</button>
+      <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:12px">UPI, cards, netbanking and wallets. Secured by Razorpay.</p>
+    {% elif dev_skip %}
+      <div class="alert warn">Test mode: payments are not set up yet, so this button skips payment.</div>
+      <form method="post" action="/order/{{ order.token }}/dev-pay">
+        <button class="btn big" style="width:100%">Continue without paying (test)</button>
+      </form>
+    {% else %}
+      <div class="alert err">Payments are temporarily unavailable. Please try again later.</div>
+    {% endif %}
+    <p style="font-size:13px;color:var(--muted);margin-top:18px">Bookmark this page to come back to your order: it's your private order link.</p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% if razorpay %}
+<script>
+document.getElementById('pay-btn').addEventListener('click', async function () {
+  const btn = this, err = document.getElementById('pay-error');
+  btn.disabled = true; err.style.display = 'none';
+  try {
+    const res = await fetch('/order/{{ order.token }}/checkout', { method: 'POST' });
+    const data = await res.json();
+    if (data.paid) { location.reload(); return; }
+    const rzp = new Razorpay({
+      key: data.key, order_id: data.order_id, amount: data.amount, currency: 'INR',
+      name: data.name, description: data.description, prefill: data.prefill,
+      theme: { color: '#1f3a5f' },
+      handler: async function (resp) {
+        btn.textContent = 'Confirming payment...';
+        const v = await fetch('/order/{{ order.token }}/verify', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resp)
+        });
+        if (v.ok) { location.reload(); }
+        else { err.textContent = 'We could not confirm your payment. If money was deducted, it will be confirmed automatically within a few minutes. Refresh this page, or contact us.'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Pay again'; }
+      },
+      modal: { ondismiss: function () { btn.disabled = false; } }
+    });
+    rzp.on('payment.failed', function (r) { err.textContent = 'Payment failed: ' + (r.error && r.error.description || 'please try again.'); err.style.display = 'block'; });
+    rzp.open();
+  } catch (e) {
+    err.textContent = 'Could not start payment. Please try again.'; err.style.display = 'block'; btn.disabled = false;
+  }
+});
+</script>
+{% endif %}{% endblock %}

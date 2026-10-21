@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Orders | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap" style="padding:30px 20px 60px;overflow-x:auto">
+  <h1 style="color:var(--navy-dark)">Orders</h1>
+  {% set paid = orders | selectattr('rzp_payment_id') | list %}
+  <p>{{ orders | length }} orders shown, {{ paid | length }} paid.</p>
+  <table class="admin">
+    <tr><th>Created (UTC)</th><th>Customer</th><th>Email</th><th>Phone</th><th>Status</th><th>Amount</th><th>Payment ID</th><th>Regens</th><th>Error</th><th></th></tr>
+    {% for o in orders %}
+    <tr>
+      <td>{{ o.created_at[:16].replace('T', ' ') }}</td>
+      <td>{{ o.customer_name }}</td>
+      <td>{{ o.email }}</td>
+      <td>{{ o.phone }}</td>
+      <td>{{ o.status }}</td>
+      <td>Rs {{ (o.amount_paise / 100) | int }}</td>
+      <td>{{ o.rzp_payment_id or '' }}</td>
+      <td>{{ o.regenerations }}</td>
+      <td style="color:var(--err);max-width:220px">{{ o.error }}</td>
+      <td><a href="/order/{{ o.token }}" target="_blank">Open</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

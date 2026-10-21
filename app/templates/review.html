@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Your resume | {{ cfg.SITE_NAME }}{% endblock %}
+{% macro lines(items) %}{{ items | join('\n') }}{% endmacro %}
+{% block content %}
+<div class="wrap">
+  <div class="page-head">
+    <h1>Your tailored resume is ready</h1>
+    <p>{% if notes.target_role %}Tailored for: <strong>{{ notes.target_role }}</strong>. {% endif %}Review it, edit anything you like, then download.</p>
+  </div>
+
+  <div style="margin:18px 0">
+    {% if request.query_params.get('saved') %}<div class="alert ok">Your changes are saved and the files are updated.</div>{% endif %}
+    {% if last_failed %}<div class="alert err">The last regeneration didn't work, so your previous version is shown. Please try again, or contact us.</div>{% endif %}
+  </div>
+
+  <div class="review">
+    <div class="preview">
+      <div class="download-row">
+        <a class="btn" href="/order/{{ order.token }}/download/docx">Download Word</a>
+        <a class="btn light" href="/order/{{ order.token }}/download/pdf">Download PDF</a>
+        <a class="btn light" href="/order/{{ order.token }}/download/pdf?inline=1&v={{ version }}" target="_blank">Open PDF</a>
+      </div>
+      <div class="pages">
+        {% for n in range(1, pages + 1) %}
+        <img src="/order/{{ order.token }}/preview/{{ n }}.png?v={{ version }}" alt="Resume page {{ n }}">
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      {% if notes.gap_notes %}
+      <div class="alert warn notes">
+        <strong>Worth checking:</strong> the job asks for these, but your resumes don't show them. Add them only if they're true.
+        <ul>{% for n in notes.gap_notes %}<li>{{ n }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+      {% if notes.conflicts %}
+      <div class="alert warn notes">
+        <strong>Please confirm:</strong> your resumes disagreed on these points.
+        <ul>{% for n in notes.conflicts %}<li>{{ n }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+
+      {% if can_edit %}
+      <form method="post" action="/order/{{ order.token }}/save" class="editor">
+        <fieldset>
+          <legend>Header</legend>
+          <div class="row2">
+            <div><label>Name</label><input type="text" name="h-name" value="{{ resume.header.name }}"></div>
+            <div><label>Location</label><input type="text" name="h-location" value="{{ resume.header.location }}"></div>
+          </div>
+          <label>Headline</label><input type="text" name="h-headline" value="{{ resume.header.headline }}">
+          <div class="row3">
+            <div><label>Email</label><input type="text" name="h-email" value="{{ resume.header.email }}"></div>
+            <div><label>Phone</label><input type="text" name="h-phone" value="{{ resume.header.phone }}"></div>
+            <div><label>LinkedIn</label><input type="text" name="h-linkedin" value="{{ resume.header.linkedin }}"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Professional summary</legend>
+          <textarea name="summary" rows="6">{{ resume.summary }}</textarea>
+        </fieldset>
+
+        <fieldset>
+          <legend>Key competencies</legend>
+          <label><span class="hint">One per line</span></label>
+          <textarea name="competencies" rows="7">{{ lines(resume.competencies) }}</textarea>
+        </fieldset>
+
+        <fieldset>
+          <legend>Professional experience</legend>
+          {% for job in resume.experience + [none] %}{% set i = loop.index0 %}
+          <div class="job">
+            {% if not job %}<p style="color:var(--muted);font-size:14px;margin:12px 0 0"><strong>Add another role</strong> (optional)</p>{% endif %}
+            <div class="row2">
+              <div><label>Company</label><input type="text" name="job-{{ i }}-company" value="{{ job.company if job else '' }}"></div>
+              <div><label>Location</label><input type="text" name="job-{{ i }}-location" value="{{ job.location if job else '' }}"></div>
+            </div>
+            <div class="row2">
+              <div><label>Job title</label><input type="text" name="job-{{ i }}-title" value="{{ job.title if job else '' }}"></div>
+              <div><label>Dates</label><input type="text" name="job-{{ i }}-dates" value="{{ job.dates if job else '' }}" placeholder="Apr 2021 - Present"></div>
+            </div>
+            <label>Company description <span class="hint">(optional, one line)</span></label>
+            <input type="text" name="job-{{ i }}-context" value="{{ job.context if job else '' }}">
+            <label>Bullet points <span class="hint">(one per line; "Theme: text" makes the theme bold)</span></label>
+            <textarea name="job-{{ i }}-bullets" rows="{{ 7 if job else 3 }}">{{ lines(job.bullets) if job else '' }}</textarea>
+            {% if job %}<label class="del"><input type="checkbox" name="job-{{ i }}-delete" value="1"> Remove this role</label>{% endif %}
+          </div>
+          {% endfor %}
+        </fieldset>
+
+        <fieldset>
+          <legend>Education</legend>
+          {% for ed in resume.education + [none] %}{% set i = loop.index0 %}
+          <div class="job">
+            {% if not ed %}<p style="color:var(--muted);font-size:14px;margin:12px 0 0"><strong>Add another qualification</strong> (optional)</p>{% endif %}
+            <div class="row2">
+              <div><label>Degree</label><input type="text" name="edu-{{ i }}-degree" value="{{ ed.degree if ed else '' }}"></div>
+              <div><label>Institution</label><input type="text" name="edu-{{ i }}-institution" value="{{ ed.institution if ed else '' }}"></div>
+            </div>
+            <div class="row2">
+              <div><label>Dates</label><input type="text" name="edu-{{ i }}-dates" value="{{ ed.dates if ed else '' }}"></div>
+              <div><label>Grade <span class="hint">(optional)</span></label><input type="text" name="edu-{{ i }}-grade" value="{{ ed.grade if ed else '' }}"></div>
+            </div>
+            {% if ed %}<label class="del"><input type="checkbox" name="edu-{{ i }}-delete" value="1"> Remove</label>{% endif %}
+          </div>
+          {% endfor %}
+        </fieldset>
+
+        <fieldset>
+          <legend>Certifications &amp; recognitions</legend>
+          <label><span class="hint">One per line</span></label>
+          <textarea name="certifications" rows="4">{{ lines(resume.certifications) }}</textarea>
+        </fieldset>
+
+        <fieldset>
+          <legend>Achievements</legend>
+          <label><span class="hint">One per line</span></label>
+          <textarea name="achievements" rows="4">{{ lines(resume.achievements) }}</textarea>
+        </fieldset>
+
+        <div class="sticky-save">
+          <button class="btn" type="submit">Save changes and update files</button>
+          <span style="color:var(--muted);font-size:13px">Your files refresh in a few seconds.</span>
+        </div>
+      </form>
+
+      <div class="card" style="margin:22px 0 60px">
+        <h3>Regenerate with instructions</h3>
+        {% if regen_left %}
+        <p>Want a different angle? Tell us what to change and we'll rewrite it. {{ regen_left }} regeneration{{ '' if regen_left == 1 else 's' }} left. This replaces your current edits.</p>
+        <form method="post" action="/order/{{ order.token }}/regenerate" onsubmit="return confirm('Regenerate the resume? Your current edits will be replaced.')">
+          <textarea name="instructions" rows="3" placeholder="For example: focus more on team leadership and stakeholder management; keep it to one page."></textarea>
+          <button class="btn light" style="margin-top:10px">Regenerate</button>
+        </form>
+        {% else %}
+        <p>You've used all your free regenerations. You can still edit above.</p>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="alert warn">The {{ cfg.EDIT_WINDOW_DAYS }}-day editing window has ended. You can still download your files and edit the Word file yourself.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

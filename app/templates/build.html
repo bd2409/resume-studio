@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Build my resume | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap narrow">
+  <div class="page-head">
+    <h1>Build your tailored resume</h1>
+    <p>Upload your resumes and the job description. You'll pay Rs {{ cfg.PRICE_RUPEES }} on the next step.</p>
+  </div>
+  <form class="form-card" method="post" action="/build" enctype="multipart/form-data" id="build-form" style="margin:24px 0 60px">
+    {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+
+    <label>Your resumes <span class="hint">(1 to {{ cfg.MAX_RESUMES }} files, PDF or Word, up to {{ cfg.MAX_FILE_MB }} MB each)</span></label>
+    <div class="drop" id="drop">
+      <input type="file" id="resumes" name="resumes" multiple accept=".pdf,.doc,.docx,.rtf,.odt,.txt">
+      <strong>Drop files here or click to choose</strong><br>
+      <span style="color:var(--muted);font-size:14px">Different versions of your resume help us find more of your achievements.</span>
+    </div>
+    <ul class="file-list" id="file-list"></ul>
+
+    <label for="job_description">Job description <span class="hint">(paste the full posting)</span></label>
+    <textarea id="job_description" name="job_description" rows="10" required placeholder="Paste the job title, responsibilities and requirements here">{{ form.job_description or '' }}</textarea>
+
+    <div class="row3">
+      <div>
+        <label for="customer_name">Your full name</label>
+        <input type="text" id="customer_name" name="customer_name" required value="{{ form.customer_name or '' }}">
+      </div>
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required value="{{ form.email or '' }}">
+      </div>
+      <div>
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" name="phone" required value="{{ form.phone or '' }}" placeholder="+91">
+      </div>
+    </div>
+
+    <label class="check" style="margin-top:22px">
+      <input type="checkbox" name="consent" value="yes" required>
+      <span>I agree to the <a href="/terms" target="_blank">terms</a> and <a href="/privacy" target="_blank">privacy policy</a>, and consent to my files being processed to create my resume. They are deleted after {{ cfg.RETENTION_DAYS }} days.</span>
+    </label>
+
+    <button class="btn big" type="submit" id="submit" style="width:100%;margin-top:24px">Continue to payment</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const MAX = {{ cfg.MAX_RESUMES }}, MAX_MB = {{ cfg.MAX_FILE_MB }};
+  const input = document.getElementById('resumes');
+  const drop = document.getElementById('drop');
+  const list = document.getElementById('file-list');
+  let files = [];
+
+  function sync() {
+    const dt = new DataTransfer();
+    files.forEach(f => dt.items.add(f));
+    input.files = dt.files;
+    list.innerHTML = '';
+    files.forEach((f, i) => {
+      const li = document.createElement('li');
+      li.textContent = f.name + ' (' + Math.max(1, Math.round(f.size / 1024)) + ' KB)';
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = '×'; b.title = 'Remove';
+      b.onclick = () => { files.splice(i, 1); sync(); };
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+  }
+  function add(newFiles) {
+    for (const f of newFiles) {
+      if (files.length >= MAX) { alert('You can upload at most ' + MAX + ' resumes.'); break; }
+      if (f.size > MAX_MB * 1024 * 1024) { alert(f.name + ' is larger than ' + MAX_MB + ' MB.'); continue; }
+      if (!files.some(x => x.name === f.name && x.size === f.size)) files.push(f);
+    }
+    sync();
+  }
+  drop.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => { const picked = Array.from(input.files); add(picked); });
+  ['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', ev => add(ev.dataTransfer.files));
+
+  document.getElementById('build-form').addEventListener('submit', ev => {
+    if (!files.length) { ev.preventDefault(); alert('Please upload at least one resume.'); return; }
+    const btn = document.getElementById('submit');
+    btn.disabled = true; btn.textContent = 'Uploading...';
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,186 @@
+"""Three-step tailoring pipeline: extract a fact bank, write the tailored resume, verify it.
+
+Every step returns validated JSON (structured outputs), and the writer must cite the facts
+behind each bullet so the verifier can reject anything not traceable to the customer's resumes.
+"""
+import base64
+import json
+import subprocess
+import tempfile
+from pathlib import Path
+
+import anthropic
+from docx import Document
+
+from . import config
+from .schemas import Draft, Profile, Resume, Verified
+
+_client = None
+
+
+def client():
+    global _client
+    if _client is None:
+        _client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY, timeout=600, max_retries=3)
+    return _client
+
+
+# ---------------------------------------------------------------- reading uploads
+
+def _docx_text(path):
+    doc = Document(path)
+    parts = [p.text for p in doc.paragraphs if p.text.strip()]
+    for table in doc.tables:
+        for row in table.rows:
+            cells = [c.text.strip() for c in row.cells if c.text.strip()]
+            if cells:
+                parts.append(" | ".join(dict.fromkeys(cells)))
+    return "\n".join(parts)
+
+
+def _convert_with_libreoffice(path, fmt):
+    out_dir = tempfile.mkdtemp()
+    subprocess.run(
+        ["soffice", "--headless", "--convert-to", fmt, "--outdir", out_dir, str(path)],
+        check=True, capture_output=True, timeout=120,
+    )
+    return next(Path(out_dir).glob(f"*.{fmt}"))
+
+
+def resume_blocks(paths):
+    """Turn uploaded files into Claude content blocks: PDFs as documents, Word files as text."""
+    blocks = []
+    for i, path in enumerate(paths, 1):
+        path = Path(path)
+        ext = path.suffix.lower()
+        if ext in {".doc", ".rtf", ".odt"}:
+            path, ext = _convert_with_libreoffice(path, "docx"), ".docx"
+        if ext == ".pdf":
+            data = base64.standard_b64encode(path.read_bytes()).decode()
+            blocks.append({
+                "type": "document",
+                "source": {"type": "base64", "media_type": "application/pdf", "data": data},
+                "title": f"Resume {i}",
+            })
+        elif ext == ".docx":
+            blocks.append({"type": "text", "text": f"<resume index=\"{i}\">\n{_docx_text(path)}\n</resume>"})
+        else:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            blocks.append({"type": "text", "text": f"<resume index=\"{i}\">\n{text}\n</resume>"})
+    return blocks
+
+
+# ---------------------------------------------------------------- prompts
+
+EXTRACT_SYSTEM = """You are a meticulous resume analyst. You receive up to six resumes written by the same person over time. Build one complete, accurate fact bank of their career.
+
+Rules:
+- Record only what the resumes actually say. Never infer, embellish or round numbers.
+- Merge the same job across resumes into one role. Keep the most complete and most recent wording of each achievement, and keep every distinct achievement.
+- Keep every number, currency figure, percentage, team size, client name and tool exactly as written.
+- Give each fact a short unique id (F1, F2, ...) across the whole profile.
+- Header: take the most recent contact details. If a field is missing, use an empty string. The headline is the person's most recent title plus their core domain, in under 12 words.
+- List any contradictions between resumes (dates, titles, figures) in conflicts."""
+
+WRITE_SYSTEM = """You are a senior resume writer for Indian and global job markets. Customers pay for a resume that clearly beats what they could write themselves, so every line must earn its place.
+
+You receive the candidate's fact bank (from their own resumes) and a target job description. Write a resume tailored to that job, in this fixed structure: header, PROFESSIONAL SUMMARY, KEY COMPETENCIES, PROFESSIONAL EXPERIENCE, EDUCATION, CERTIFICATIONS & RECOGNITIONS, ACHIEVEMENTS.
+
+First, analyse the job: the target role, its must-have skills and the exact keywords an applicant tracking system will scan for.
+
+Truthfulness (non-negotiable):
+- Use only facts from the fact bank. Every experience bullet lists the fact ids it is based on.
+- Never invent employers, titles, dates, degrees, certifications, tools, metrics, team sizes or results. Never change a number.
+- You may reword, combine and reframe facts to show their relevance, and use the job's terminology where the underlying experience genuinely matches.
+- If the job needs something the facts do not support, leave it out and add a gap note advising the customer, for example: "The role asks for Power BI. Your resumes don't mention it; add it only if you have used it."
+
+Quality:
+- Headline: target-role-aligned title plus 2 to 3 strengths, under 12 words, true to the candidate's level.
+- Summary: 3 to 4 sentences, about 60 to 80 words. Years of experience, domain, 2 to 3 strongest quantified results relevant to this job, and what they bring to this role. No first person, no cliches ("results-driven", "dynamic", "go-getter", "passionate").
+- Key competencies: 9 to 12 short items (2 to 4 words), ordered by relevance to the job, each backed by the fact bank, using the job's wording where accurate.
+- Experience: most recent first. 4 to 6 bullets for the latest one or two relevant roles, 2 to 3 for older ones, 1 to 2 for roles over 10 years old. Order bullets by relevance to the job.
+- Bullets: start with a strong, varied past-tense action verb (present tense for the current role), show scope, action and measurable result, one to two lines each. Where a bullet has a clear theme, start it with a short bold-style lead phrase followed by a colon, for example "Recurring payments: Launched ...". Use lead phrases on the main role's bullets only.
+- Context: one short line on the company if known from the facts, else empty.
+- Dates as "Mon YYYY - Mon YYYY" or "Mon YYYY - Present".
+- Education: highest first, with grade if given.
+- Certifications & recognitions: certifications and formal awards. Achievements: other standout accomplishments (awards, rankings, publications, talks, patents, notable projects) not already used as bullets. If there are none, use the strongest remaining facts rather than repeating bullets.
+- Length: fits one page for under 5 years of experience, two pages at most otherwise.
+- Indian conventions are fine (Rs, lakh, crore) when the source uses them. Use plain text only, no markdown."""
+
+VERIFY_SYSTEM = """You are the quality checker for a paid resume-writing service. You receive the candidate's fact bank, the job description and a draft resume whose bullets cite fact ids. Return the final, corrected resume.
+
+Check every line:
+1. Truth: each claim, number, tool, title, date, employer and qualification must be supported by the fact bank. Remove or rewrite anything unsupported, including in the summary, headline and competencies. Numbers must match the source exactly.
+2. Fit: the strongest job-relevant facts are used and ordered first; must-have keywords appear wherever they are honestly supported.
+3. Writing: no repeated opening verbs within a role, no cliches, no first person, no filler, consistent tense and date format, no spelling or grammar errors, plain text only.
+4. Format: sections complete; bullet counts and length follow the rules (one page under 5 years of experience, at most two pages otherwise).
+
+List each correction you made. Keep the gap notes that still apply and add any new ones. Do not add anything that is not in the fact bank."""
+
+
+def _call(system, content, schema, effort):
+    response = client().messages.parse(
+        model=config.AI_MODEL,
+        max_tokens=16000,
+        system=system,
+        output_config={"effort": effort},
+        messages=[{"role": "user", "content": content}],
+        output_format=schema,
+    )
+    if response.stop_reason == "refusal":
+        raise RuntimeError("The AI declined this request.")
+    if response.stop_reason == "max_tokens" or response.parsed_output is None:
+        raise RuntimeError("The AI response was incomplete.")
+    return response.parsed_output
+
+
+def extract_profile(paths):
+    content = resume_blocks(paths) + [{
+        "type": "text",
+        "text": "Build the fact bank from the resumes above.",
+    }]
+    return _call(EXTRACT_SYSTEM, content, Profile, effort="medium")
+
+
+def write_and_verify(profile: Profile, job_description: str, instructions: str = ""):
+    """Returns (Resume, notes) where notes holds gap notes and corrections for the customer."""
+    facts = profile.model_dump_json(indent=1)
+    extra = f"\n\n<customer_instructions>\n{instructions}\n</customer_instructions>" if instructions else ""
+    draft = _call(
+        WRITE_SYSTEM,
+        f"<fact_bank>\n{facts}\n</fact_bank>\n\n<job_description>\n{job_description}\n</job_description>{extra}",
+        Draft,
+        effort="high",
+    )
+    verified = _call(
+        VERIFY_SYSTEM,
+        f"<fact_bank>\n{facts}\n</fact_bank>\n\n<job_description>\n{job_description}\n</job_description>\n\n"
+        f"<draft>\n{draft.model_dump_json(indent=1)}\n</draft>",
+        Verified,
+        effort="high",
+    )
+    notes = {
+        "target_role": draft.target_role,
+        "gap_notes": verified.gap_notes,
+        "corrections": verified.corrections,
+        "keyword_coverage": verified.keyword_coverage,
+        "conflicts": profile.conflicts,
+    }
+    return verified.resume, notes
+
+
+# ---------------------------------------------------------------- mock mode for local testing
+
+SAMPLE = Path(__file__).with_name("sample_resume.json")
+
+
+def mock_generate():
+    resume = Resume.model_validate(json.loads(SAMPLE.read_text()))
+    notes = {
+        "target_role": "Sample output (AI not connected)",
+        "gap_notes": ["This is sample content. Set ANTHROPIC_API_KEY to generate real resumes."],
+        "corrections": [],
+        "keyword_coverage": [],
+        "conflicts": [],
+    }
+    return resume, notes

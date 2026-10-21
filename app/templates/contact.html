@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Contact | {{ cfg.SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="block">
+  <div class="wrap narrow">
+    <div class="section-title"><h2>Contact us</h2><p>Questions about your order or our service? We usually reply within one working day.</p></div>
+    <div class="card">
+      <p><strong>Email:</strong> <a href="mailto:{{ cfg.CONTACT_EMAIL }}">{{ cfg.CONTACT_EMAIL }}</a></p>
+      {% if cfg.CONTACT_PHONE %}<p><strong>Phone / WhatsApp:</strong> {{ cfg.CONTACT_PHONE }}</p>{% endif %}
+      <p><strong>Address:</strong> {{ cfg.BUSINESS_ADDRESS }}</p>
+      <p style="margin-top:14px">For order questions, please include the email address you used at checkout.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
