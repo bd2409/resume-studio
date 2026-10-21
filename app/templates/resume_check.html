@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Free age-proof resume check for professionals 35+ | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}Upload your resume and get a free score, what's dating it, the strengths to lead with and quick fixes. Built for experienced professionals.{% endblock %}
+{% block content %}{% set form = form or {} %}
+<section class="block soft">
+  <div class="wrap narrow">
+  {% if result %}
+    <div class="page-head" style="padding-top:0">
+      <h1>Your age-proof resume check</h1>
+      <p>For {{ person }}. We've also emailed you this link so you can come back to it.</p>
+    </div>
+    <div class="match-card" style="margin:18px 0">
+      <div class="match-ring" style="--p: {{ result.score }}"><span>{{ result.score }}</span></div>
+      <div><strong>Score: {{ result.score }} / 100</strong><p>{{ result.verdict }}</p></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h3 style="margin-top:0">💪 Lead with these strengths</h3>
+      <ul class="checks" style="margin:6px 0 0">{% for s in result.strengths %}<li>{{ s }}</li>{% endfor %}</ul>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h3 style="margin-top:0">⚠️ What may be dating your resume</h3>
+      {% for a in result.age_signals %}
+      <p style="margin:12px 0 2px;color:var(--navy-dark)"><strong>{{ a.issue }}</strong></p>
+      <p style="margin:0">Fix: {{ a.fix }}</p>
+      {% endfor %}
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h3 style="margin-top:0">⚡ Quick wins (under an hour)</h3>
+      <ul class="checks" style="margin:6px 0 0">{% for q in result.quick_wins %}<li>{{ q }}</li>{% endfor %}</ul>
+    </div>
+    <div class="card" style="margin-bottom:24px">
+      <h3 style="margin-top:0">🤖 AI skills that would strengthen your profile</h3>
+      <p>{{ result.ai_skills }}</p>
+    </div>
+    <div class="form-card" style="margin-bottom:60px;text-align:center">
+      <h2 style="color:var(--navy-dark);margin-top:0">Want all of this fixed for you?</h2>
+      <p>We rewrite your resume from your real experience, tailored to the job you want, with every fix above applied. Editable Word and PDF, plus a cover letter.</p>
+      <a class="btn big gold" href="/build">Rewrite my resume for Rs {{ cfg.PRICE_RUPEES }}</a>
+      <p style="margin-top:14px;font-size:14px"><a href="/free/playbook">Get the free 35+ playbook</a> · <a href="/book/claude">Learn Claude 1:1</a> · <a href="/build?product=premium">Premium, reviewed by {{ cfg.OWNER_NAME }}</a></p>
+    </div>
+  {% else %}
+    <div class="page-head" style="padding-top:0">
+      <h1>🧭 Free age-proof resume check</h1>
+      <p>For experienced professionals. Upload your resume and in about a minute you'll see your score, what may be dating it, the strengths to lead with, and quick fixes.</p>
+    </div>
+    <form class="form-card" method="post" action="/free/resume-check" enctype="multipart/form-data" id="check-form" style="margin:24px 0 60px">
+      {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+      <label for="resume">Your resume <span class="hint">(PDF or Word, up to {{ cfg.MAX_FILE_MB }} MB)</span></label>
+      <input type="file" id="resume" name="resume" required accept=".pdf,.doc,.docx,.rtf,.odt,.txt">
+      <label for="target_role">Role you're aiming for <span class="hint">(optional)</span></label>
+      <input type="text" id="target_role" name="target_role" maxlength="120" value="{{ form.target_role or '' }}" placeholder="For example: Plant head, operations">
+      <div class="row3">
+        <div><label for="name">Your name</label><input type="text" id="name" name="name" required value="{{ form.name or '' }}"></div>
+        <div><label for="email">Email</label><input type="email" id="email" name="email" required value="{{ form.email or '' }}"></div>
+        <div><label for="phone">WhatsApp <span class="hint">(optional)</span></label><input type="tel" id="phone" name="phone" value="{{ form.phone or '' }}" placeholder="+91"></div>
+      </div>
+      <label class="check" style="margin-top:18px">
+        <input type="checkbox" name="consent" value="yes" required>
+        <span>I agree to the <a href="/privacy" target="_blank">privacy policy</a>. My resume is read once for this check and not stored. I'm happy to get occasional career tips by email.</span>
+      </label>
+      <button class="btn big" type="submit" id="check-btn" style="width:100%;margin-top:22px">Check my resume free</button>
+      <p style="font-size:13px;color:var(--muted);margin-top:12px">One free check per email.</p>
+    </form>
+  {% endif %}
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+const f = document.getElementById('check-form');
+if (f) f.addEventListener('submit', () => { const b = document.getElementById('check-btn'); b.disabled = true; b.textContent = 'Reading your resume... about a minute'; });
+</script>
+{% endblock %}

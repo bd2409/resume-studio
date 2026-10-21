@@ -1,10 +1,13 @@
 import base64
+import html
 import json
 import logging
 import re
 import secrets
 import shutil
+import tempfile
 import threading
+import urllib.parse
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -15,6 +18,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import Depends
+from fastapi.concurrency import run_in_threadpool
 
 from . import ai, auth, config, db, mailer, payments, render
 from .profile import PROFILE
@@ -236,6 +240,7 @@ STATIC_PAGES = {
     "/refund-policy": "refund.html",
     "/services": "services.html",
     "/colleges": "colleges.html",
+    "/free": "free.html",
 }
 
 
@@ -249,7 +254,7 @@ for _path, _template in STATIC_PAGES.items():
     app.add_api_route(_path, _static_page(_template), methods=["GET"], response_class=HTMLResponse)
 
 
-PUBLIC_PAGES = ["/", "/resume", "/services", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy"]
+PUBLIC_PAGES = ["/", "/resume", "/services", "/free", "/free/playbook", "/free/resume-check", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy"]
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
@@ -427,6 +432,10 @@ BOOKING_FIELDS = {
               ("stage", "Stage and size (for example: seed, 12 people, Rs 40 lakh monthly revenue)", True),
               ("goals", "What do you want marketing to achieve in the next 6 months?", True),
               ("channels", "What are you doing in marketing today? (optional)", False)],
+    "claude": [("work", "Your work or business (for example: HR head at a manufacturing company)", True),
+               ("goal", "What would you like Claude to help you do? A project, report, task or workflow", True),
+               ("level", "Have you used ChatGPT, Claude or other AI tools before? (optional)", False),
+               ("preferred_times", "Days and times that suit you", False)],
 }
 
 
@@ -471,6 +480,89 @@ async def book_submit(request: Request, product: str):
     db.update(order["id"], product=product, extra_json=json.dumps(extra), user_email=current_user_email(request),
               files_json=json.dumps(store_uploads(order["id"], saved)) if saved else "[]")
     return RedirectResponse(f"/order/{order['token']}", status_code=303)
+
+
+# ------------------------------------------------------------------ free lead magnets (for 35+ professionals)
+
+def _valid_email(email):
+    return re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email or "") is not None
+
+
+@app.get("/free/playbook", response_class=HTMLResponse)
+def playbook(request: Request, t: str = ""):
+    reader = auth.read_cookie(t) if t else None
+    if reader:
+        return page(request, "playbook.html", reader=reader)
+    return page(request, "playbook_gate.html", error=None, form={})
+
+
+@app.post("/free/playbook", response_class=HTMLResponse)
+async def playbook_signup(request: Request):
+    f = await request.form()
+    form = {k: (f.get(k) or "").strip()[:200] for k in ("name", "email", "phone", "age_band")}
+    if len(form["name"]) < 2 or not _valid_email(form["email"]):
+        return page(request, "playbook_gate.html", error="Please enter your name and a valid email.", form=form)
+    if not db.lead_for("playbook", form["email"]):
+        db.add_enquiry("playbook", form["name"], form["email"], form["phone"], "", f"Age: {form['age_band']}")
+    token = auth.make_cookie(form["email"], form["name"])
+    link = f"{config.SITE_URL}/free/playbook?t={urllib.parse.quote(token)}"
+    mailer.send(form["email"], f"Your 35+ Career Comeback Playbook - {config.SITE_NAME}",
+                f"<p>Hi {html.escape(form['name'])},</p><p>Here's your playbook: <a href=\"{link}\">{link}</a></p>"
+                f"<p>Bhargab</p>")
+    return RedirectResponse(f"/free/playbook?t={urllib.parse.quote(token)}", status_code=303)
+
+
+@app.get("/free/resume-check", response_class=HTMLResponse)
+def resume_check_form(request: Request, t: str = ""):
+    reader = auth.read_cookie(t) if t else None
+    lead = db.lead_for("resume-check", reader["email"]) if reader else None
+    if lead and lead["details"].startswith("{"):
+        return page(request, "resume_check.html", result=json.loads(lead["details"]), person=lead["name"])
+    return page(request, "resume_check.html", result=None, error=None, form={})
+
+
+@app.post("/free/resume-check", response_class=HTMLResponse)
+async def resume_check_submit(request: Request):
+    f = await request.form()
+    form = {k: (f.get(k) or "").strip()[:200] if isinstance(f.get(k), str) else "" for k in ("name", "email", "phone", "target_role", "consent")}
+
+    def fail(msg):
+        return page(request, "resume_check.html", result=None, error=msg, form=form)
+
+    if len(form["name"]) < 2 or not _valid_email(form["email"]):
+        return fail("Please enter your name and a valid email.")
+    if not form["consent"]:
+        return fail("Please agree to the privacy policy so we can read your resume.")
+    token = urllib.parse.quote(auth.make_cookie(form["email"], form["name"]))
+    if db.lead_for("resume-check", form["email"]):
+        return RedirectResponse(f"/free/resume-check?t={token}", status_code=303)  # one free check per email
+    if db.leads_today("resume-check") >= config.FREE_CHECKS_PER_DAY:
+        return fail("Today's free checks are all used up. Please come back tomorrow, or get your full resume rewritten now.")
+    upload = f.get("resume")
+    if not getattr(upload, "filename", ""):
+        return fail("Please upload your resume.")
+    saved, error = await read_uploads([upload])
+    if error:
+        return fail(error)
+    ext, data = saved[0]
+    tmp = Path(tempfile.mkdtemp()) / f"resume{ext}"
+    tmp.write_bytes(data)
+    try:
+        if config.AI_MODE == "mock":
+            result = ai.mock_resume_check()
+        else:
+            result = await run_in_threadpool(ai.resume_check, tmp, form["target_role"])
+    except Exception:
+        log.exception("Free resume check failed")
+        return fail("Sorry, we couldn't read that file. Please try a PDF or Word version.")
+    finally:
+        shutil.rmtree(tmp.parent, ignore_errors=True)  # the free check keeps no copy of the resume
+    db.add_enquiry("resume-check", form["name"], form["email"], form["phone"], form["target_role"], result.model_dump_json())
+    link = f"{config.SITE_URL}/free/resume-check?t={token}"
+    mailer.send(form["email"], f"Your free resume check: {result.score}/100 - {config.SITE_NAME}",
+                f"<p>Hi {html.escape(form['name'])},</p><p>Your resume scored {result.score}/100. "
+                f"See your full results and fixes here: <a href=\"{link}\">{link}</a></p><p>Bhargab</p>")
+    return RedirectResponse(f"/free/resume-check?t={token}", status_code=303)
 
 
 @app.post("/enquiry", response_class=HTMLResponse)
@@ -821,4 +913,21 @@ def admin(request: Request):
     for o in orders:
         o["label"] = product_of(o)["label"]
         o["extra"] = json.loads(o["extra_json"] or "{}")
-    return page(request, "admin.html", orders=orders, enquiries=db.enquiries())
+    leads = db.enquiries(500)
+    for e in leads:
+        e["score"] = json.loads(e["details"]).get("score") if e["details"].startswith("{") else None
+    return page(request, "admin.html", orders=orders, enquiries=leads)
+
+
+@app.get("/admin/leads.csv", dependencies=[Depends(admin_auth)])
+def leads_csv():
+    import csv
+    import io
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["received_utc", "type", "name", "email", "phone", "institution_or_target", "details"])
+    for e in db.enquiries(100000):
+        details = f"score {json.loads(e['details']).get('score')}" if e["details"].startswith("{") else e["details"]
+        w.writerow([e["created_at"], e["kind"], e["name"], e["email"], e["phone"], e["org"], details])
+    return Response(buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=leads.csv"})

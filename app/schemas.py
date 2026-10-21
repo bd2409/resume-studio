@@ -141,3 +141,17 @@ class Pack(BaseModel):
     title: str = Field(description="Title for this person's pack, e.g. 'Interview prep: Senior Product Manager, fintech'")
     intro: str = Field(description="Two or three sentences on how to use the pack")
     sections: List[PackSection]
+
+
+class AgeSignal(BaseModel):
+    issue: str = Field(description="What in the resume may date the candidate or hurt them with recruiters")
+    fix: str = Field(description="The specific change to make")
+
+
+class ResumeCheck(BaseModel):
+    score: int = Field(description="0 to 100: how modern, focused and recruiter-ready the resume is")
+    verdict: str = Field(description="One or two honest, encouraging sentences summarising the resume")
+    strengths: List[str] = Field(description="3 to 5 real strengths an experienced professional should lead with")
+    age_signals: List[AgeSignal] = Field(description="3 to 7 things that date the resume or bury recent impact, with fixes")
+    quick_wins: List[str] = Field(description="3 to 5 changes they can make in under an hour")
+    ai_skills: str = Field(description="2 or 3 sentences on which AI skills would strengthen this profile and how to show them")

@@ -25,12 +25,13 @@
     {% endfor %}
   </table>
 
-  <h2 style="color:var(--navy-dark);margin-top:40px">College and bulk enquiries</h2>
+  <h2 style="color:var(--navy-dark);margin-top:40px">Leads and enquiries</h2>
+  <p>Free playbook sign-ups, free resume checks and college enquiries. <a href="/admin/leads.csv">Download as CSV</a></p>
   {% if enquiries %}
   <table class="admin">
-    <tr><th>Received (UTC)</th><th>Name</th><th>Institution</th><th>Email</th><th>Phone</th><th>Details</th></tr>
+    <tr><th>Received (UTC)</th><th>Type</th><th>Name</th><th>Institution / target</th><th>Email</th><th>Phone</th><th>Details</th></tr>
     {% for e in enquiries %}
-    <tr><td>{{ e.created_at[:16].replace('T', ' ') }}</td><td>{{ e.name }}</td><td>{{ e.org }}</td><td>{{ e.email }}</td><td>{{ e.phone }}</td><td style="white-space:pre-wrap;max-width:320px">{{ e.details }}</td></tr>
+    <tr><td>{{ e.created_at[:16].replace('T', ' ') }}</td><td>{{ e.kind }}</td><td>{{ e.name }}</td><td>{{ e.org }}</td><td>{{ e.email }}</td><td>{{ e.phone }}</td><td style="white-space:pre-wrap;max-width:320px">{% if e.score is not none %}Score {{ e.score }}/100{% else %}{{ e.details }}{% endif %}</td></tr>
     {% endfor %}
   </table>
   {% else %}<p>No enquiries yet.</p>{% endif %}

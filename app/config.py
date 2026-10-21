@@ -65,6 +65,9 @@ PRICE_CONTENT = int(os.getenv("PRICE_CONTENT", "999"))
 PRICE_PREMIUM = int(os.getenv("PRICE_PREMIUM", "2999"))
 PRICE_CALL = int(os.getenv("PRICE_CALL", "1999"))
 PRICE_AUDIT = int(os.getenv("PRICE_AUDIT", "7999"))
+PRICE_CLAUDE = int(os.getenv("PRICE_CLAUDE", "2499"))
+# Free AI resume checks per day (the lead magnet), to cap AI spend.
+FREE_CHECKS_PER_DAY = int(os.getenv("FREE_CHECKS_PER_DAY", "40"))
 
 # Optional scheduling link (Calendly, Google Calendar booking page, ...) shown after a call is paid for.
 CALL_BOOKING_URL = os.getenv("CALL_BOOKING_URL", "")
@@ -106,6 +109,9 @@ PRODUCTS = {
     "audit": _product("Startup marketing audit", PRICE_AUDIT, "🚀",
                       "Bhargab reviews your brand, website, funnel and ads, then walks you through a written action plan.",
                       service=True),
+    "claude": _product("Learn Claude AI for your work (1:1, 90 min)", PRICE_CLAUDE, "🤖",
+                       "A hands-on session with Bhargab: set up Claude and build a real project from your own work, step by step.",
+                       service=True),
 }
 # Products sold through the resume upload form, in display order.
 CAREER_PRODUCTS = ["resume", "bundle", "linkedin", "premium", "interview", "outreach", "salary", "content"]

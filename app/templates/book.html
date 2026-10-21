@@ -11,6 +11,14 @@
       <li>Your positioning, target roles, job-search plan or career switch, worked through together</li>
       <li>A short written summary of the action plan after the call</li>
     </ul>
+    {% elif key == 'claude' %}
+    <ul class="checks" style="margin-top:12px">
+      <li>90 minutes on video with {{ cfg.OWNER_NAME }}, at your pace. No technical background needed</li>
+      <li>Set up Claude, then build one real project from your own work together: a report, proposal, analysis, plan or workflow</li>
+      <li>Prompts and a step-by-step method you can reuse every week</li>
+      <li>Ideal for experienced professionals who want to stay ahead, not start over</li>
+    </ul>
+    <p style="font-size:13px;color:var(--muted)">Claude is an AI assistant made by Anthropic. This is an independent coaching session, not affiliated with Anthropic.</p>
     {% else %}
     <ul class="checks" style="margin-top:12px">
       <li>A review of your brand, positioning, website, funnel, ads and social presence</li>
@@ -28,8 +36,8 @@
     </div>
     {% for name, label, required in fields %}
     <label for="{{ name }}">{{ label }}</label>
-    {% if name in ('topic', 'goals', 'channels', 'preferred_times') %}
-    <textarea id="{{ name }}" name="{{ name }}" rows="{{ 4 if name in ('topic', 'goals') else 2 }}" {% if required %}required{% endif %}>{{ form[name] or '' }}</textarea>
+    {% if name in ('topic', 'goals', 'channels', 'preferred_times', 'goal') %}
+    <textarea id="{{ name }}" name="{{ name }}" rows="{{ 4 if name in ('topic', 'goals', 'goal') else 2 }}" {% if required %}required{% endif %}>{{ form[name] or '' }}</textarea>
     {% else %}
     <input type="text" id="{{ name }}" name="{{ name }}" {% if required %}required{% endif %} value="{{ form[name] or '' }}">
     {% endif %}

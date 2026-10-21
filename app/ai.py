@@ -13,7 +13,7 @@ import anthropic
 from docx import Document
 
 from . import config, render
-from .schemas import CoverLetter, LinkedInProfile, Pack, Draft, Profile, Resume, Verified
+from .schemas import CoverLetter, LinkedInProfile, Pack, ResumeCheck, Draft, Profile, Resume, Verified
 
 _client = None
 
@@ -188,6 +188,29 @@ Sections, in this order:
 }
 PACK_DEFAULT_TITLES = {"interview": "Interview prep pack", "outreach": "Cold outreach pack",
                        "salary": "Salary negotiation script", "content": "LinkedIn content kit"}
+
+
+CHECK_SYSTEM = """You review resumes for experienced professionals (usually 35 and older) for a free "age-proof resume check". Give an honest, specific and encouraging review of the resume provided, for the target role if one is given.
+
+Focus on what makes an experienced candidate look dated or hard to place, and how to fix it: career history going back more than 15 years in full detail, graduation years, an "objective" or "career objective" section, old-fashioned layout or length over two pages, outdated tools or skills listed while modern ones are missing, duties instead of quantified results, a long generic summary, an old email domain, no LinkedIn URL, and missing evidence of recent learning or AI skills. Also name the real strengths they should lead with: depth, leadership, results, domain expertise.
+Base every point on what is actually in the resume. Never invent facts. Be practical and kind; no lectures about age. Plain text only."""
+
+
+def resume_check(path, target_role=""):
+    target = f"Target role: {target_role}" if target_role else "No target role given; review for their current career direction."
+    return _call(CHECK_SYSTEM, resume_blocks([path]) + [{"type": "text", "text": target}], ResumeCheck, effort="low")
+
+
+def mock_resume_check():
+    return ResumeCheck(
+        score=64,
+        verdict="Sample result, shown because the AI is not connected yet. With the AI connected, this is a real review of the uploaded resume.",
+        strengths=["Long record of leading teams", "Clear domain expertise"],
+        age_signals=[{"issue": "Roles from the 1990s are described in full detail", "fix": "Keep the last 15 years in detail; list older roles in one line each."},
+                     {"issue": "Graduation year shown", "fix": "Show the degree and institution without the year."}],
+        quick_wins=["Replace the objective with a 3-line summary of results", "Add your LinkedIn URL"],
+        ai_skills="Show one recent way you used AI tools at work, with the result.",
+    )
 
 
 def write_pack(kind: str, profile: Profile, job: str, details: str = "", instructions: str = ""):

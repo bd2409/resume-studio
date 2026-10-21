@@ -44,9 +44,18 @@
     <div class="svc-group">
       <h2>Work with {{ cfg.OWNER_NAME }}</h2>
       <p>One-to-one time with someone who has built marketing engines for startups and scale-ups.</p>
-      <div class="grid two">
+      <div class="grid three">
+        {{ svc('claude', '/book/claude', 'Learn Claude') }}
         {{ svc('call', '/book/call', 'Book a call') }}
         {{ svc('audit', '/book/audit', 'Book an audit') }}
+      </div>
+    </div>
+
+    <div class="svc-group">
+      <h2>Free for experienced professionals (35+)</h2>
+      <div class="grid two">
+        <div class="card svc-card"><div class="icon">🧭</div><h3>Free age-proof resume check</h3><p>Upload your resume and get a score out of 100, what's dating it, and the fixes, in about a minute.</p><div class="svc-price">Free</div><a class="btn small" href="/free/resume-check">Check my resume</a></div>
+        <div class="card svc-card"><div class="icon">📘</div><h3>The 35+ Career Comeback Playbook</h3><p>Age-proof your resume and LinkedIn, plus 15 copy-paste Claude prompts for your job search and your work.</p><div class="svc-price">Free</div><a class="btn small" href="/free/playbook">Get the playbook</a></div>
       </div>
     </div>
 

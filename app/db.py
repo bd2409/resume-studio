@@ -171,6 +171,19 @@ def add_enquiry(kind, name, email, phone, org, details):
                   (now(), kind, name, email, phone, org, details))
 
 
+def leads_today(kind):
+    today = datetime.now(timezone.utc).date().isoformat()
+    with conn() as c:
+        return c.execute("SELECT COUNT(*) FROM enquiries WHERE kind = ? AND created_at >= ?", (kind, today)).fetchone()[0]
+
+
+def lead_for(kind, email):
+    with conn() as c:
+        row = c.execute("SELECT * FROM enquiries WHERE kind = ? AND lower(email) = ? ORDER BY id DESC LIMIT 1",
+                        (kind, email.lower())).fetchone()
+    return dict(row) if row else None
+
+
 def enquiries(limit=100):
     with conn() as c:
         rows = c.execute("SELECT * FROM enquiries ORDER BY id DESC LIMIT ?", (limit,)).fetchall()

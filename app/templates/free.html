@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Free career tools for professionals 35+ | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}Free age-proof resume check and the 35+ Career Comeback Playbook with Claude AI prompts, for experienced professionals in India.{% endblock %}
+{% block content %}
+<section class="block soft">
+  <div class="wrap">
+    <div class="section-title">
+      <h2>Experience is your edge. Let's make it show.</h2>
+      <p>Free tools for professionals 35 and over who want their next move to be their best one, and want to use AI to get there.</p>
+    </div>
+    <div class="grid two">
+      <div class="card svc-card">
+        <div class="icon">🧭</div>
+        <h3>Free age-proof resume check</h3>
+        <p>Upload your resume. In about a minute you get a score out of 100, the things that quietly date it, the strengths to lead with, and quick fixes.</p>
+        <ul class="checks" style="margin:10px 0 0"><li>Spots what makes recruiters skip experienced candidates</li><li>Specific fixes, not generic advice</li><li>Your file is not stored</li></ul>
+        <a class="btn" href="/free/resume-check">Check my resume free</a>
+      </div>
+      <div class="card svc-card">
+        <div class="icon">📘</div>
+        <h3>The 35+ Career Comeback Playbook</h3>
+        <p>A practical guide to getting hired after 35 in the AI era, written by {{ cfg.OWNER_NAME }}.</p>
+        <ul class="checks" style="margin:10px 0 0"><li>Age-proof your resume and LinkedIn</li><li>15 copy-paste Claude prompts for your job search and your work</li><li>Your first AI project in 60 minutes, and a 30-day plan</li></ul>
+        <a class="btn" href="/free/playbook">Get the free playbook</a>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="max-width:680px">
+        <h3 style="margin-top:0">🤖 Want to learn Claude hands-on?</h3>
+        <p>A 90-minute 1:1 session where we build a real project from your own work. No technical background needed. Rs {{ '{:,}'.format(cfg.PRICE_CLAUDE) }}.</p>
+      </div>
+      <a class="btn big" href="/book/claude">Book a session</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
