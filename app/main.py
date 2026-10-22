@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
 
-from . import ai, auth, blog, config, db, faq, mailer, payments, render
+from . import ai, auth, blog, config, db, faq, linkedin, mailer, payments, render
 from .profile import PROFILE
 from .schemas import Profile, Resume
 
@@ -33,7 +33,7 @@ ALLOWED_EXT = {".pdf", ".docx", ".doc", ".rtf", ".odt", ".txt"}
 app = FastAPI(title=config.SITE_NAME, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "templates")
-templates.env.globals.update(cfg=config, year=datetime.now().year, me=PROFILE, resume_templates=render.TEMPLATES,
+templates.env.globals.update(linkedin_posts=lambda limit=None: linkedin.posts(limit), cfg=config, year=datetime.now().year, me=PROFILE, resume_templates=render.TEMPLATES,
                              latest_posts=blog.POSTS[:3],
                              services_schema=[
                                  {"@type": "Offer", "price": pr["price"], "priceCurrency": "INR",
@@ -225,6 +225,7 @@ def cleanup_loop():
 @app.on_event("startup")
 def startup():
     db.init()
+    linkedin.start()
     threading.Thread(target=cleanup_loop, daemon=True).start()
     # Resume work interrupted by a restart.
     with db.conn() as c:
@@ -432,7 +433,8 @@ def healthz():
     # Setup status without any secret values, so the owner can see why checkout is hidden.
     return {"ok": True, "ai_connected": config.AI_MODE == "live", "cashfree_keys_set": payments.enabled(),
             "cashfree_mode": payments.mode(), "checkout_for_everyone": payments.enabled() and config.AI_MODE == "live"
-            and payments.mode() == "production"}
+            and payments.mode() == "production",
+            "linkedin_posts_embedded": f"{sum(1 for p in linkedin.posts() if p['embed'])} of {len(linkedin.POSTS)}"}
 
 
 # ------------------------------------------------------------------ order flow

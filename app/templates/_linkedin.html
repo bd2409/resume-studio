@@ -1,0 +1,21 @@
+{# LinkedIn posts. Set li_limit before including to show fewer. #}
+{% set li = linkedin_posts(li_limit if li_limit is defined else None) %}
+{% if li %}
+<div class="li-grid">
+  {% for p in li %}
+  {% if p.embed %}
+  <div class="li-card">
+    <iframe src="{{ p.embed }}" title="LinkedIn post by {{ me.name }}" loading="lazy" allowfullscreen></iframe>
+    <a class="li-open" href="{{ p.link }}" target="_blank" rel="noopener">Open on LinkedIn →</a>
+  </div>
+  {% else %}
+  <a class="li-card li-fallback" href="{{ p.link }}" target="_blank" rel="noopener">
+    <span class="li-badge">in</span>
+    <strong>Read this post on LinkedIn</strong>
+    <span class="li-open">Open post →</span>
+  </a>
+  {% endif %}
+  {% endfor %}
+</div>
+<p class="li-follow"><a class="btn" href="{{ me.linkedin }}" target="_blank" rel="noopener">Follow {{ me.name.split()[0] }} on LinkedIn</a></p>
+{% endif %}

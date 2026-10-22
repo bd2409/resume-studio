@@ -356,3 +356,13 @@ table.compare td:nth-child(2) { background: #f1f8f4; }
 .more-grid .blog-card p { font-size: 14px; margin: 0; }
 .good-to-know { background: #fff8e8; border: 1px solid #f1dfb5; border-radius: 10px; padding: 10px 14px; }
 @media (max-width: 640px) { .blog-post table { display: block; overflow-x: auto; white-space: normal; } .blog-post th, .blog-post td { min-width: 120px; } }
+.li-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: start; }
+.li-card { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.li-card iframe { width: 100%; height: 540px; border: 0; display: block; }
+.li-open { display: block; padding: 10px 14px; font-size: 14px; font-weight: 600; color: var(--navy); border-top: 1px solid var(--line); text-decoration: none; }
+.li-fallback { align-items: flex-start; gap: 10px; padding: 22px 18px 0; min-height: 160px; text-decoration: none; color: inherit; }
+.li-fallback .li-open { margin: auto -18px 0; width: calc(100% + 36px); }
+.li-badge { background: #0a66c2; color: #fff; font-weight: 700; border-radius: 6px; padding: 2px 8px; font-size: 14px; }
+.li-follow { text-align: center; margin-top: 22px; }
+@media (max-width: 900px) { .li-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .li-grid { grid-template-columns: 1fr; } }
