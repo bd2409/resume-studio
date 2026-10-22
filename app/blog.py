@@ -74,7 +74,7 @@ def _parse(path):
 
 def load():
     posts = [_parse(p) for p in sorted(DIR.glob("*.md"))]
-    posts.sort(key=lambda p: (p["date"], p["title"]), reverse=True)
+    posts.sort(key=lambda p: (p["updated"], p["date"], p["title"]), reverse=True)
     return posts
 
 

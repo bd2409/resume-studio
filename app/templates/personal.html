@@ -41,6 +41,8 @@
       <a href="#services">Services</a>
       <a href="#work">Work</a>
       <a href="#resume-service">Resume service</a>
+      <a href="/blog">Blog</a>
+      <a href="/free">Free tools</a>
       <a href="#contact">Contact</a>
       <a class="btn small" href="#contact">Book a call</a>
     </div>
@@ -132,6 +134,26 @@
   </div>
 </section>
 
+<section class="block" id="blog">
+  <div class="wrap">
+    <div class="section-title">
+      <h2 class="p-h2">Latest from the blog</h2>
+      <p>Practical guides on leadership, marketing and careers.</p>
+    </div>
+    <div class="grid three">
+      {% for r in latest_posts %}
+      <a class="card blog-card" href="/blog/{{ r.slug }}">
+        <span class="blog-meta">{{ r.category }} · {{ r.minutes }} min read</span>
+        <h3>{{ r.title }}</h3>
+        <p>{{ r.description[:120] }}{% if r.description|length > 120 %}…{% endif %}</p>
+        <span class="blog-more">Read more →</span>
+      </a>
+      {% endfor %}
+    </div>
+    <p style="text-align:center;margin-top:22px"><a class="btn" href="/blog">See all guides</a></p>
+  </div>
+</section>
+
 <section class="block soft" id="linkedin">
   <div class="wrap">
     <div class="section-title">
@@ -206,6 +228,13 @@
       <a href="/build">Build my resume</a>
       <a href="/pricing">Pricing</a>
       <a href="/faq">FAQ</a>
+      <a href="/services">All services</a>
+    </div>
+    <div>
+      <strong style="color:#fff">Read</strong>
+      <a href="/blog">Blog</a>
+      <a href="/free">Free tools</a>
+      <a href="/free/resume-check">Free resume check</a>
     </div>
     <div>
       <strong style="color:#fff">Elsewhere</strong>
