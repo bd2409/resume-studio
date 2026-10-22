@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Editorial policy | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}How the guides on bhargabdas.in are researched, written, credited and updated.{% endblock %}
+{% block content %}
+<section class="wrap narrow prose" style="max-width:780px;padding-top:30px">
+  <h1>Editorial policy</h1>
+  <p>The guides on this blog are written to be practical and accurate for working professionals and founders in India.</p>
+  <h2>How guides are written</h2>
+  <ul>
+    <li>Each guide is written or reviewed by {{ me.name }}, drawing on hands-on experience leading marketing, growth and teams.</li>
+    <li>Frameworks and ideas are credited to the people or organisations that created them.</li>
+    <li>Examples are illustrative. Numbers in examples are made up to show the method, unless a source is named.</li>
+    <li>We don't invent statistics, reviews or testimonials.</li>
+  </ul>
+  <h2>Recommendations and our services</h2>
+  <p>Some guides end with one of our paid services or free tools. We say so clearly, and the advice in the guide is useful whether or not you buy anything.</p>
+  <h2>Updates and corrections</h2>
+  <p>Guides show the date they were last updated. If you spot an error, <a href="/contact">tell us</a> and we'll correct it.</p>
+</section>
+{% endblock %}

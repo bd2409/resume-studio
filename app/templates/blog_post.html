@@ -10,23 +10,29 @@
 {% block content %}
 <article class="wrap narrow prose blog-post" style="max-width:780px">
   <nav class="crumbs"><a href="/">Home</a> › <a href="/blog">Blog</a> › <span>{{ post.category }}</span></nav>
+  <p class="post-meta"><span class="post-cat">{{ post.category }}</span> · {{ post.minutes }} min read · {{ post.updated.strftime('%d %B %Y') }} · By <a href="/">{{ me.name }}</a></p>
   <h1>{{ post.title }}</h1>
-  <p class="blog-byline">By <a href="/">{{ me.name }}</a> · Updated {{ post.updated.strftime('%d %b %Y') }} · {{ post.minutes }} min read</p>
-  <div class="answer-box">
-    <strong>Short answer</strong>
-    <p>{{ post.summary }}</p>
-  </div>
+  {% if post.hook %}<p class="post-hook">{{ post.hook }}</p>{% endif %}
+  <figure class="post-hero">
+    <div class="post-hero-art" aria-hidden="true">
+      <span class="post-hero-cat">{{ post.category }}</span>
+      <span class="post-hero-title">{{ post.title.split(':')[0] }}</span>
+    </div>
+    {% if post.caption %}<figcaption>{{ post.caption }}</figcaption>{% endif %}
+  </figure>
   {% if post.takeaways %}
   <div class="takeaways">
     <strong>Key takeaways</strong>
     <ul>{% for t in post.takeaways %}<li>{{ t }}</li>{% endfor %}</ul>
   </div>
   {% endif %}
+  <p class="quick-answer"><strong>{{ post.summary }}</strong></p>
+  {% if post.method %}<p class="post-method"><strong>How I put this guide together.</strong> {{ post.method }}</p>{% endif %}
   {{ post.html | safe }}
   {% if post.faqs %}
-  <h2 id="faq">Frequently asked questions</h2>
+  <h2 id="faq">Frequently Asked Questions</h2>
   <div class="faq">
-    {% for f in post.faqs %}<details{% if loop.first %} open{% endif %}><summary>{{ f.q }}</summary>{{ f.a_html | safe }}</details>{% endfor %}
+    {% for f in post.faqs %}<h3>{{ f.q }}</h3>{{ f.a_html | safe }}{% endfor %}
   </div>
   {% endif %}
   {% set c = post.cta %}
@@ -37,11 +43,20 @@
   </div>
   <div class="author-box">
     <img src="{{ me.photo }}" alt="{{ me.name }}" width="64" height="64" loading="lazy">
-    <div><strong>{{ me.name }}</strong><p>{{ me.headline }}. {{ me.name.split()[0] }} helps professionals present their experience clearly and helps startups build their marketing engine. <a href="/">More about {{ me.name.split()[0] }}</a></p></div>
+    <div><span class="author-label">Written by</span><strong>{{ me.name }}</strong> <span class="author-cred">{{ me.headline }}</span><p>{{ me.name.split()[0] }} has led marketing and growth for technology and consumer businesses, and helps professionals present their experience clearly. <a href="/">More about {{ me.name.split()[0] }}</a> · <a href="/editorial-policy">Editorial policy</a></p></div>
   </div>
   {% if related %}
-  <h2>Read next</h2>
-  <ul>{% for r in related %}<li><a href="/blog/{{ r.slug }}">{{ r.title }}</a></li>{% endfor %}</ul>
+  <h2 class="more-h">More from the blog</h2>
+  <div class="grid three more-grid">
+    {% for r in related %}
+    <a class="card blog-card" href="/blog/{{ r.slug }}">
+      <span class="blog-meta">{{ r.category }} · {{ r.minutes }} min read</span>
+      <h3>{{ r.title }}</h3>
+      <p>{{ r.description[:120] }}{% if r.description|length > 120 %}…{% endif %}</p>
+      <span class="blog-more">Read more →</span>
+    </a>
+    {% endfor %}
+  </div>
   {% endif %}
   <div style="height:50px"></div>
 </article>

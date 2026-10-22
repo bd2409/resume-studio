@@ -338,3 +338,21 @@ table.compare td:nth-child(2) { background: #f1f8f4; }
 .author-box { display: flex; gap: 14px; align-items: flex-start; border-top: 1px solid var(--line); padding-top: 18px; margin-top: 10px; }
 .author-box img { border-radius: 50%; object-fit: cover; }
 .author-box p { margin: 4px 0 0; font-size: 14px; }
+.post-meta { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.post-cat { text-transform: uppercase; letter-spacing: .5px; font-weight: 700; color: var(--navy); }
+.post-hook { font-size: 19px; line-height: 1.5; color: var(--ink, #1f2937); margin: 6px 0 16px; }
+.post-hero { margin: 0 0 22px; }
+.post-hero-art { display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; min-height: 200px; padding: 26px; border-radius: 16px; color: #fff; background: radial-gradient(circle at 85% 20%, rgba(255,255,255,.18) 0 60px, transparent 61px), radial-gradient(circle at 70% 90%, rgba(255,255,255,.10) 0 90px, transparent 91px), linear-gradient(135deg, var(--navy-dark), var(--navy)); }
+.post-hero-cat { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: .85; }
+.post-hero-title { font-size: clamp(20px, 3vw, 28px); font-weight: 700; line-height: 1.25; max-width: 560px; }
+.post-hero figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.quick-answer { font-size: 17px; line-height: 1.6; margin: 0 0 14px; }
+.post-method { font-size: 15px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 12px; }
+.blog-post .faq h3 { font-size: 17px; margin: 18px 0 6px; }
+.author-label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.author-cred { font-size: 13px; color: var(--muted); }
+.more-h { margin-top: 36px; }
+.more-grid { gap: 14px; }
+.more-grid .blog-card p { font-size: 14px; margin: 0; }
+.good-to-know { background: #fff8e8; border: 1px solid #f1dfb5; border-radius: 10px; padding: 10px 14px; }
+@media (max-width: 640px) { .blog-post table { display: block; overflow-x: auto; white-space: normal; } .blog-post th, .blog-post td { min-width: 120px; } }

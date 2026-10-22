@@ -1,37 +1,48 @@
 ---
-title: OKRs explained: how to write objectives and key results, with examples
-description: What OKRs are, how to write good objectives and key results, examples for sales, marketing, operations and HR teams, and the common mistakes that make OKRs fail.
+title: OKRs Explained (2026): How to Write Objectives and Key Results, with 12 Examples
+description: What OKRs are, how to write good objectives and key results, 12 OKR examples for sales, marketing, operations, HR, product and founders, and the mistakes that make OKRs fail.
 date: 2026-10-21
+updated: 2026-10-22
 category: Leadership
 keywords: OKRs, objectives and key results, OKR examples, how to write OKRs, OKR vs KPI, OKR framework
-summary: OKRs (Objectives and Key Results) are a goal-setting framework where each objective is an ambitious, qualitative goal and each key result is a measurable outcome that proves progress. Set three to five objectives per quarter, each with three to five key results, measure outcomes rather than tasks, review weekly, and score at the end of the quarter.
-takeaways: Objectives inspire; key results measure | Key results are outcomes, not tasks | Three to five objectives, three to five key results each | Review progress weekly, score quarterly | Keep OKRs separate from appraisal ratings so people set ambitious goals
+hook: Most teams don't lack goals. They have too many, and none of them are measurable.
+caption: An objective says where you're going. Key results prove you got there.
+summary: OKRs pair an ambitious, qualitative objective with three to five measurable key results. Set three to five objectives a quarter, write key results as outcomes rather than tasks, check progress weekly, score at the end of the quarter, and keep OKR scores separate from appraisal ratings so people aim high.
+method: The format follows Andy Grove's original approach at Intel, as popularised by John Doerr. The 12 examples are illustrative, written for typical Indian companies; the numbers show the method, not real benchmarks.
+takeaways: Objectives inspire; key results measure | Key results are outcomes, not tasks | Three to five objectives, three to five key results each | Review weekly, score quarterly | Keep OKRs separate from appraisal ratings
 cta: call
 ---
 
-OKRs are one of the most widely used goal-setting frameworks in the world. They were developed by Andy Grove at Intel, brought to Google by John Doerr in 1999, and are now used by startups and large companies alike, including many in India.
+## OKR examples at a glance
 
-## What OKRs are
+| Best for | Objective | Sample key result | Why it works |
+|---|---|---|---|
+| Sales | Break into mid-market | Grow mid-market pipeline from Rs 2 crore to Rs 6 crore | Outcome, not activity |
+| Marketing | Become the go-to brand for D2C founders | Generate 300 sales-qualified leads | Measures quality, not clicks |
+| Operations | Deliver every order on time | Raise on-time delivery from 88% to 97% | Customer-facing metric |
+| HR | Make this a place great people stay | Cut regretted attrition from 18% to 12% | Focuses on the right exits |
+| Product | Make onboarding effortless | Cut time to first value from 3 days to 1 | Ties product work to users |
+| Customer support | Solve it the first time | Raise first-contact resolution from 62% to 75% | Fewer repeat tickets |
+| Finance | Get paid faster | Reduce receivable days from 75 to 55 | Improves cash flow |
+| Founder | Find product-market fit in one segment | 40 paying customers renewing month two | Proves real demand |
+| Engineering | Ship without fear | Cut failed deployments from 12% to 4% | Quality and speed together |
+| Personal career | Become ready for a head-of role | Lead one cross-team project to a measured result | Builds resume evidence |
+| Content | Get found on search and AI assistants | Grow organic visits from 20,000 to 35,000 a month | Compounding channel |
+| Partnerships | Open a new channel | Sign 5 partners delivering 20% of new leads | Measures contribution |
 
-- **Objective:** what you want to achieve. Qualitative, ambitious and memorable.
-- **Key results:** how you'll know you achieved it. Three to five measurable outcomes, each with a number and a deadline.
+## Do you need OKRs at all?
 
-A simple test from Doerr: "I will **[objective]** as measured by **[key results]**."
+OKRs help when:
 
-## How to write a good objective
+- Your team is busy but can't say what mattered most this quarter.
+- Departments pull in different directions.
+- You want ambitious goals without tying them to bonuses.
 
-A good objective is:
+If you're a five-person team with one obvious goal, a single written priority may be enough.
 
-- **Short and clear**: someone outside the team understands it.
-- **Ambitious**: it stretches the team, but it's not fantasy.
-- **Time-bound**: usually one quarter.
+## A key result tells you what changed. A task list tells you what you did.
 
-Weak: "Improve marketing."
-Strong: "Make our brand the first choice for first-time home buyers in Pune."
-
-## How to write good key results
-
-Key results measure **outcomes**, not activities.
+The most common OKR mistake is writing activities as key results.
 
 | Activity (avoid) | Outcome (use) |
 |---|---|
@@ -39,53 +50,74 @@ Key results measure **outcomes**, not activities.
 | Hold training sessions | Raise first-call resolution from 62% to 75% |
 | Redesign the website | Increase demo bookings from the website by 40% |
 
-Activities still matter. They go into your plan, not your key results.
+Activities still matter. They belong in your plan, not your key results.
 
-## OKR examples by team
+## 1. How to write the objective
 
-**Sales**
-> Objective: Break into the mid-market segment.
-> KR1: Sign 12 new mid-market customers.
-> KR2: Grow mid-market pipeline from Rs 2 crore to Rs 6 crore.
-> KR3: Cut average sales cycle from 75 to 55 days.
+- **Short and clear:** someone outside the team understands it.
+- **Ambitious:** it stretches the team.
+- **Time-bound:** usually one quarter.
 
-**Marketing**
-> Objective: Become the go-to brand for D2C founders.
-> KR1: Grow organic website traffic from 20,000 to 35,000 visits a month.
-> KR2: Generate 300 sales-qualified leads.
-> KR3: Lower cost per lead from Rs 900 to Rs 650.
+Weak: "Improve marketing." Strong: "Make our brand the first choice for first-time home buyers in Pune."
 
-**Operations**
-> Objective: Deliver every order on time, every time.
-> KR1: Raise on-time delivery from 88% to 97%.
-> KR2: Reduce damaged shipments from 2.1% to 0.8%.
-> KR3: Cut cost per delivery by 10%.
+**Good to know:** an objective has no number. The numbers live in the key results.
 
-**HR**
-> Objective: Make us a place great people want to stay.
-> KR1: Reduce regretted attrition from 18% to 12% (annualised).
-> KR2: Raise engagement survey score from 68 to 75.
-> KR3: Fill 90% of open roles within 45 days.
+**Best for:** getting a team excited about the same thing.
 
-## How to run OKRs
+## 2. How to write key results
 
-1. **Set company OKRs** first, then let teams propose their own that support them. Aim for a mix of top-down and bottom-up.
-2. **Keep the number small**: three to five objectives in total for a team.
-3. **Check in weekly**: progress on each key result, confidence (on track, at risk, off track), and blockers.
-4. **Score at the end of the quarter**: commonly from 0 to 1. For stretch goals, around 0.7 is often treated as a good result.
-5. **Reflect and reset**: what did we learn, what carries over, what do we drop?
+Use Doerr's test: "I will **[objective]** as measured by **[key results]**."
 
-## OKRs vs KPIs
+- Each has a starting number, a target and a deadline.
+- Each has one owner.
+- Three to five per objective.
 
-**KPIs** are the health metrics you monitor all the time (revenue, attrition, uptime). **OKRs** are the few things you want to change significantly this quarter. A KPI that's off track often becomes the subject of an OKR.
+**Good to know:** if a key result could be "done" without the objective improving, rewrite it.
 
-## Common mistakes
+**Best for:** turning ambition into something you can track every week.
+
+## 3. How to run the quarter
+
+1. Set company OKRs, then let teams propose their own.
+2. Check in weekly: progress, confidence (on track, at risk, off track) and blockers.
+3. Score at the end of the quarter from 0 to 1. For stretch goals, around 0.7 is often treated as a good result.
+4. Reflect: what did we learn, what carries over, what do we drop?
+
+**Good to know:** OKRs set in January and opened again in March aren't OKRs. The weekly check-in is the system.
+
+**Best for:** teams that set goals and forget them.
+
+## 4. OKRs vs KPIs
+
+**KPIs** are the health metrics you always watch (revenue, attrition, uptime). **OKRs** are the few things you want to change significantly this quarter. A KPI that's off track often becomes an OKR.
+
+## 5. Common mistakes
 
 - Too many OKRs, so nothing gets focus.
-- Key results that are just a to-do list.
-- Tying OKR scores directly to bonuses, so people set safe goals.
-- Setting them in January and looking again in March.
-- No single owner for each key result.
+- Key results that are a to-do list.
+- Tying scores directly to bonuses, so people set safe goals.
+- No single owner per key result.
+
+## How to set your first OKRs in one afternoon
+
+1. List the three most important things that must change this quarter.
+2. Turn each into one inspiring objective.
+3. Under each, write three numbers that would prove it changed.
+4. Check each key result is an outcome, not a task.
+5. Assign one owner per key result.
+6. Put a 20-minute weekly check-in in the calendar.
+
+## Our verdict: what good OKRs look like
+
+| What to look for | Why it matters | Good OKRs |
+|---|---|---|
+| Three to five objectives | Focus | ✓ |
+| Measurable outcomes | You can see progress | ✓ |
+| One owner per key result | Accountability | ✓ |
+| Weekly check-ins | Problems surface early | ✓ |
+| Separate from bonuses | People aim high | ✓ |
+
+Start small: one team, one quarter, three objectives. Fix the process before rolling it out company-wide.
 
 ## Frequently asked questions
 
@@ -101,5 +133,8 @@ KPIs track the ongoing health of the business. OKRs focus effort on a few signif
 ### Should OKRs be linked to performance appraisals?
 Most practitioners recommend keeping them separate, so people set ambitious goals without fear of being penalised for a stretch target.
 
+### What is a good OKR score?
+For stretch goals, many teams treat about 0.7 out of 1 as a good result. Consistently scoring 1.0 usually means the goals were too safe.
+
 ### How do I show OKR experience on my resume?
-Lead with the result, not the process: "Owned the quarterly OKR for mid-market growth; grew pipeline from Rs 2 crore to Rs 6 crore in two quarters."
+Lead with the result: "Owned the quarterly OKR for mid-market growth; grew pipeline from Rs 2 crore to Rs 6 crore in two quarters."

@@ -1,125 +1,144 @@
 ---
-title: 12 leadership frameworks every manager should know, and when to use each
-description: A practical guide to the leadership frameworks senior leaders actually use: OKRs, the Eisenhower matrix, RACI, situational leadership, GROW, SBI feedback, the 5 Whys, OODA, Cynefin, one-way and two-way doors, Tuckman's stages and the Golden Circle.
+title: Leadership Frameworks Every Manager Should Know (2026): 12 Tools Explained
+description: The 12 leadership frameworks senior leaders actually use, compared in one table: OKRs, Eisenhower matrix, RACI, situational leadership, GROW, SBI, 5 Whys, OODA, Cynefin, one-way and two-way doors, Tuckman's stages and the Golden Circle, with when to use each.
 date: 2026-10-21
+updated: 2026-10-22
 category: Leadership
 keywords: leadership frameworks, management frameworks, leadership models, frameworks for managers, decision making frameworks, leadership tools
-summary: Leadership frameworks are simple mental models that help you set direction, decide, delegate, coach and solve problems consistently. The most useful twelve are OKRs (goals), the Eisenhower matrix (priorities), RACI (ownership), situational leadership and GROW (people), SBI (feedback), the 5 Whys (root causes), OODA and Cynefin (uncertainty), one-way and two-way doors (decision speed), Tuckman's stages (team building) and the Golden Circle (communication). Pick the one that fits the problem, not the one you like best.
-takeaways: Frameworks are tools for thinking, not rules to follow | Match the framework to the problem: goals, priorities, people, decisions or uncertainty | Learn a few deeply rather than many superficially | Use them out loud so your team shares the same language | Naming the framework you used is a strong interview answer
+hook: Most leadership problems aren't new. Fortunately, most of them already have a framework.
+caption: Twelve frameworks, five jobs: setting direction, prioritising, leading people, solving problems and deciding.
+summary: If you learn only three, start with the Eisenhower matrix for your week, RACI for ownership and SBI for feedback. Add OKRs when your team needs quarterly focus, GROW when you want people to solve their own problems, and Cynefin or one-way and two-way doors when decisions feel slow or uncertain.
+method: I picked the frameworks I've seen used most often by leaders in Indian startups and large companies, and that a manager can apply the same week without training. Each one is credited to its originator. Examples are illustrative.
+takeaways: Frameworks are tools for thinking, not rules to follow | Match the framework to the problem: goals, priorities, people, decisions or uncertainty | Learn three deeply before adding more | Use them out loud so your team shares the same language | Naming the framework you used is a strong interview answer
 cta: call
 ---
 
-By Bhargab Das.
+## The 12 leadership frameworks at a glance
 
-Good leaders don't reinvent how they think every time a problem lands on their desk. They carry a small set of **frameworks**: simple models that make a messy situation clearer and help a team act together. Here are twelve worth knowing, grouped by the job they do.
+| Best for | Framework | Origin | Why it made the list |
+|---|---|---|---|
+| Your own week | Eisenhower matrix | Attributed to Dwight Eisenhower | Protects important work from urgent noise |
+| Clear ownership | RACI | Project management practice | Ends "I thought you were doing it" |
+| Fair feedback | SBI | Center for Creative Leadership | Specific, hard to argue with |
+| Quarterly focus | OKRs | Andy Grove, Intel; John Doerr | Aligns a team on a few outcomes |
+| Coaching | GROW | Sir John Whitmore and colleagues | People find their own answers |
+| Leading different people | Situational leadership | Paul Hersey and Ken Blanchard | Stops one-size-fits-all managing |
+| Recurring problems | 5 Whys | Toyota production system | Finds the root cause in minutes |
+| Decision speed | One-way and two-way doors | Jeff Bezos, Amazon | Most decisions can be made faster |
+| Fast-moving situations | OODA loop | John Boyd | Speed of learning beats a perfect plan |
+| Uncertainty | Cynefin | Dave Snowden | Tells you whether to plan or experiment |
+| New teams | Tuckman's stages | Bruce Tuckman, 1965 | Conflict in a new team is normal |
+| Communicating change | Golden Circle | Simon Sinek | People commit to "why" first |
 
-## Setting direction
+## Do you need frameworks at all?
 
-### 1. OKRs (Objectives and Key Results)
+You need them more as your team grows. They help when:
 
-**What it is:** an ambitious, qualitative **objective** with three to five measurable **key results** that show you got there. Developed by Andy Grove at Intel and popularised by John Doerr at Google.
+- You're a first-time manager promoted for being great at the work, not at leading it.
+- Your team keeps debating **how** to decide instead of deciding.
+- Work falls between departments and nobody owns it.
+- You give the same feedback repeatedly and nothing changes.
+- You're preparing for a senior interview and need to show **how** you think.
 
-**Use it when:** you need a team to focus on a few outcomes for a quarter.
+If your team is small, aligned and delivering, don't add process for its own sake.
 
-> Objective: Make our app the easiest way for small shops to take payments.
-> KR1: Cut onboarding time from 3 days to 1 day.
-> KR2: Grow weekly active merchants from 8,000 to 12,000.
-> KR3: Raise app store rating from 3.9 to 4.4.
+## A framework tells you what to look at. Judgement tells you what to do.
 
-Read more: [OKRs explained with examples](/blog/okrs-explained-with-examples).
+Frameworks are popular because they're simple. That's also their risk: a neatly filled-in RACI or SWOT can feel like progress when nothing has changed. The test of any framework is whether it changed a decision, a conversation or a result this week.
 
-### 2. The Golden Circle (Why, How, What)
+## 1. Eisenhower matrix
 
-**What it is:** Simon Sinek's idea that people commit to **why** you do something before they care about how or what.
+Sort every task by **urgent** and **important** into four boxes: do now, schedule, delegate, drop.
 
-**Use it when:** announcing a change, pitching a plan, or writing a vision. Start with the purpose, then the approach, then the specifics.
+- **Do now:** urgent and important (a client escalation).
+- **Schedule:** important, not urgent (strategy, hiring, coaching).
+- **Delegate:** urgent, not important (many meeting requests and routine approvals).
+- **Drop:** neither.
 
-## Prioritising and owning work
+**Good to know:** most leadership work lives in "schedule". If it's not in your calendar, it won't happen.
 
-### 3. The Eisenhower matrix
+**Best for:** managers whose week is full but whose important work isn't moving.
 
-**What it is:** sort tasks by **urgent** and **important** into four boxes: do now, schedule, delegate, drop.
+## 2. RACI
 
-**Use it when:** your week is full and nothing important is moving. Most leadership work (strategy, hiring, coaching) is important but not urgent, so it must be scheduled deliberately.
+For each task, name who is **Responsible** (does it), **Accountable** (owns the outcome, only one person), **Consulted** and **Informed**.
 
-### 4. RACI
+- Write it at the top of any cross-team project.
+- Only one "A" per task. Two owners means no owner.
+- Keep the "C" list short, or every decision becomes a meeting.
 
-**What it is:** for each task, name who is **Responsible** (does it), **Accountable** (owns the outcome, only one person), **Consulted** and **Informed**.
+**Good to know:** RACI fixes ownership, not motivation. If the accountable person lacks authority, fix that first.
 
-**Use it when:** projects stall because "everyone thought someone else was doing it", especially across departments.
+**Best for:** projects that stall between departments.
 
-## Leading people
+## 3. SBI feedback
 
-### 5. Situational leadership
+Describe the **Situation**, the specific **Behaviour**, and its **Impact**, then ask for their view.
 
-**What it is:** Paul Hersey and Ken Blanchard's model that your style should match each person's competence and commitment on a specific task: **directing**, **coaching**, **supporting** or **delegating**.
+> "In Tuesday's client review (situation), you interrupted the client twice (behaviour). They went quiet, and we never heard the real issue (impact). What was going on for you?"
 
-**Use it when:** a strong performer is struggling with a new responsibility, or you're tempted to manage everyone the same way.
+- Works for praise as well as correction.
+- Describes behaviour, never personality.
 
-### 6. GROW coaching model
+**Good to know:** give it within a day or two. Feedback saved for appraisal time feels like an ambush.
 
-**What it is:** a coaching conversation in four steps: **Goal**, **Reality**, **Options**, **Way forward**. Associated with Sir John Whitmore.
+**Best for:** any manager who finds feedback conversations awkward.
 
-**Use it when:** someone brings you a problem and you want them to own the solution instead of you solving it for them.
+## 4. OKRs
 
-### 7. SBI feedback
+An ambitious **objective** with three to five measurable **key results**. Use them for quarterly focus. See the full guide: [OKRs explained with examples](/blog/okrs-explained-with-examples).
 
-**What it is:** describe the **Situation**, the specific **Behaviour**, and its **Impact**. Developed by the Center for Creative Leadership.
+## 5. GROW coaching model
 
-> "In Tuesday's client review (situation), you interrupted the client twice while they were explaining their concern (behaviour). They went quiet for the rest of the meeting, and we didn't hear the real issue (impact)."
+**Goal, Reality, Options, Way forward.** Ask questions in that order so the person finds and owns the solution. More in [feedback and coaching frameworks](/blog/feedback-and-coaching-frameworks-for-managers).
 
-Read more: [feedback and coaching frameworks for managers](/blog/feedback-and-coaching-frameworks-for-managers).
+## 6. Situational leadership
 
-### 8. Tuckman's stages of team development
+Match your style to the person's competence and commitment **on this task**: directing, coaching, supporting or delegating. The same person may need different styles for different tasks.
 
-**What it is:** teams move through **forming, storming, norming and performing** (Bruce Tuckman, 1965).
+## 7. The 5 Whys
 
-**Use it when:** a new team is arguing and you're worried. Storming is normal; your job is to help the team set norms and get through it.
+Ask "why?" about five times until you reach a cause you can fix. Best for problems that keep coming back, such as repeated late deliveries.
 
-## Solving problems and deciding
+## 8. One-way and two-way doors
 
-### 9. The 5 Whys
+Irreversible decisions (one-way doors) deserve care; reversible ones (two-way doors) deserve speed. Most decisions are two-way doors. More in [decision-making frameworks for leaders](/blog/decision-making-frameworks-for-leaders).
 
-**What it is:** ask "why?" repeatedly (about five times) until you reach a root cause rather than a symptom. It comes from Toyota's production system.
+## 9. OODA loop
 
-**Use it when:** the same problem keeps coming back.
+**Observe, Orient, Decide, Act**, then repeat, faster than the situation changes. Useful in a crisis or a competitive launch.
 
-### 10. One-way and two-way doors
+## 10. Cynefin
 
-**What it is:** Jeff Bezos's distinction between decisions that are hard to reverse (one-way doors: decide carefully) and easy to reverse (two-way doors: decide fast and learn).
+Sorts situations into clear, complicated, complex and chaotic, and tells you whether to apply best practice, ask experts, experiment or act first to stabilise.
 
-**Use it when:** your team treats every decision as high-stakes and moves too slowly.
+## 11. Tuckman's stages
 
-### 11. OODA loop
+Teams move through **forming, storming, norming and performing**. If a new team is arguing, help it agree norms rather than panicking.
 
-**What it is:** **Observe, Orient, Decide, Act**, then repeat. Developed by military strategist John Boyd.
+## 12. The Golden Circle
 
-**Use it when:** the situation is changing fast (a competitor launch, a crisis) and speed of learning matters more than a perfect plan.
+Start with **why**, then how, then what, when announcing change or pitching a plan.
 
-### 12. Cynefin
+## How to start using frameworks this week
 
-**What it is:** Dave Snowden's framework for matching your approach to the kind of situation: **clear** (apply best practice), **complicated** (ask experts), **complex** (run small experiments), **chaotic** (act first to stabilise).
+1. Pick one problem that's costing you time right now.
+2. Find it in the table above and choose one framework.
+3. Use it once, out loud, with your team ("Let's do a quick RACI on this").
+4. Review after a week: did anything change?
+5. Keep it if it helped. Drop it if it didn't.
+6. Add a second framework only once the first is a habit.
 
-**Use it when:** you're not sure whether to plan, analyse or experiment.
+## Our verdict: the three frameworks I'd start with
 
-Read more: [decision-making frameworks for leaders](/blog/decision-making-frameworks-for-leaders).
+| What to look for | Why it matters | Eisenhower, RACI and SBI |
+|---|---|---|
+| Useful the same day | No training or tools needed | ✓ |
+| Covers your three biggest jobs | Your time, your team's ownership, your people | ✓ |
+| Easy to explain to your team | Shared language spreads faster | ✓ |
+| Shows up in results | Fewer dropped tasks, clearer feedback | ✓ |
 
-## How to choose the right framework
-
-| The problem | Try |
-|---|---|
-| Team lacks focus | OKRs, Golden Circle |
-| Too much to do | Eisenhower matrix |
-| Unclear ownership | RACI |
-| Someone is stuck or underperforming | Situational leadership, GROW, SBI |
-| New or conflicted team | Tuckman's stages |
-| Problem keeps recurring | 5 Whys |
-| Decisions are too slow | One-way and two-way doors |
-| Fast-changing or uncertain situation | OODA, Cynefin |
-
-## Using frameworks in your career
-
-Frameworks also help you **show** leadership. In an interview, "I used RACI to fix ownership across three teams, and delivery time dropped by 30%" is far stronger than "I'm good at coordination". On your resume, the result matters most, but the method tells the reader how you think.
+For a manager starting out, the Eisenhower matrix, RACI and SBI cover most daily problems. Add OKRs, GROW and the decision frameworks as your scope grows.
 
 ## Frequently asked questions
 
@@ -130,7 +149,13 @@ A leadership framework is a simple, repeatable model that helps a leader think t
 None is best for everything. OKRs suit goal-setting, RACI suits ownership, GROW suits coaching and Cynefin suits uncertainty. Choose the one that matches the problem in front of you.
 
 ### How many frameworks should a manager learn?
-Start with three or four that fit your daily work, such as the Eisenhower matrix, RACI, SBI and OKRs, and use them until they become habits before adding more.
+Start with three, such as the Eisenhower matrix, RACI and SBI, and use them until they're habits before adding more.
+
+### Which frameworks should a first-time manager learn?
+The Eisenhower matrix for your time, RACI for ownership, SBI for feedback and situational leadership for adapting to each person.
 
 ### Should I mention frameworks in interviews?
 Yes, briefly. Name the framework, then spend most of your answer on what you did and the result. It shows structured thinking without sounding theoretical.
+
+### Are leadership frameworks still relevant with AI?
+Yes. AI can draft a RACI or summarise OKR progress, but choosing priorities, giving feedback and owning decisions still need a leader's judgement.

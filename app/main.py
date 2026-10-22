@@ -246,6 +246,7 @@ STATIC_PAGES = {
     "/services": "services.html",
     "/colleges": "colleges.html",
     "/free": "free.html",
+    "/editorial-policy": "editorial.html",
 }
 
 
@@ -259,7 +260,7 @@ for _path, _template in STATIC_PAGES.items():
     app.add_api_route(_path, _static_page(_template), methods=["GET"], response_class=HTMLResponse)
 
 
-PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy"]
+PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy"]
 
 
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User",
