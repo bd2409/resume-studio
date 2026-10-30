@@ -1,0 +1,101 @@
+{
+  "generated_by": "sample",
+  "generated_at": "2026-10-30",
+  "agent": {
+    "name": "Jordan Rivera",
+    "brokerage": "Sample Realty Group",
+    "area": "Austin, TX",
+    "phone": "(512) 555-0142"
+  },
+  "lead": {
+    "input": {
+      "name": "Taylor Brooks",
+      "email": "taylor.brooks@example.com",
+      "phone": "(512) 555-0199",
+      "source": "Zillow",
+      "property": "4812 Ridgeview Dr",
+      "message": "Hi, is this still available? We're relocating for work in about 2 months and would love to see it this weekend if possible. Our budget is around 450k."
+    },
+    "output": {
+      "score": "hot",
+      "score_reason": "Asked about a specific listing and wants to tour this weekend.",
+      "intent": "buy",
+      "timeline": "Within 60 days",
+      "budget": "Around $450,000",
+      "pre_approved": "unknown",
+      "questions_to_ask": [
+        "Have you spoken with a lender yet?",
+        "Is there a home you need to sell first?"
+      ],
+      "reply_email_subject": "Touring 4812 Ridgeview Dr this weekend",
+      "reply_email_body": "Hi Taylor,\n\nThanks for reaching out about 4812 Ridgeview Dr. I'd be glad to show it to you. I have Saturday at 11am or Sunday at 2pm open. Does either work?\n\nOne quick question so I can help you best: have you spoken with a lender yet?\n\nJordan Rivera\nSample Realty Group · (512) 555-0142",
+      "reply_sms": "Hi Taylor, it's Jordan Rivera with Sample Realty Group. Got your note about 4812 Ridgeview Dr. I can show it Sat 11am or Sun 2pm. Which works better?",
+      "next_action": "Send the text now, then call within 5 minutes if there is no reply."
+    }
+  },
+  "listing": {
+    "input": {
+      "address": "4812 Ridgeview Dr",
+      "city": "Austin",
+      "state": "TX",
+      "price": "$449,000",
+      "beds": 3,
+      "baths": 2,
+      "sqft": 1820,
+      "year_built": 2016,
+      "highlights": [
+        "an open kitchen with a quartz island",
+        "a covered back patio",
+        "a two-car garage",
+        "new carpet in 2025"
+      ],
+      "notes": "Corner lot. Community pool. 10 minutes to downtown by car."
+    },
+    "output": {
+      "headline": "3-bed, 2-bath home with an open kitchen with a quartz island",
+      "mls_description": "Welcome to 4812 Ridgeview Dr, Austin. This 3-bedroom, 2-bath home offers 1820 square feet with an open kitchen with a quartz island, a covered back patio, a two-car garage, new carpet in 2025. The primary bedroom has its own bath and a walk-in closet. Listed at $449,000.",
+      "instagram_caption": "Just listed: 4812 Ridgeview Dr, Austin. 3 beds, 2 baths, 1820 sq ft. DM me for a private tour. #JustListed #AustinRealEstate #NewListing #HomeForSale #OpenHouse",
+      "facebook_post": "New on the market: 4812 Ridgeview Dr, Austin. 3 beds, 2 baths and an open kitchen with a quartz island. Message me to see it this week.",
+      "email_subject": "Just listed: 4812 Ridgeview Dr",
+      "email_body": "Hi there,\n\nI just listed 4812 Ridgeview Dr, Austin: 3 beds, 2 baths, 1820 sq ft, at $449,000. Reply to this email and I'll set up a showing.\n\nJordan Rivera",
+      "open_house_sms": "Open house this Sat 1-3pm at 4812 Ridgeview Dr. 3 beds, 2 baths. Reply YES and I'll save you a spot. - Jordan Rivera",
+      "fair_housing": {
+        "ok": true,
+        "flags": []
+      }
+    }
+  },
+  "nurture": {
+    "input": "first_name,last_name,email,property,closing_date,last_contact,notes\nMorgan,Lee,morgan.lee@example.com,118 Oak Hollow Ln,2023-10-14,2026-07-02,Planned to redo the backyard\nCasey,Nguyen,casey.nguyen@example.com,2207 Elm Park Ct,2021-03-09,2025-12-20,Started a home bakery\nRiley,Patel,riley.patel@example.com,905 Sunset Bluff,2024-05-22,2026-09-30,Got a new puppy\nAvery,Kim,avery.kim@example.com,77 Cedar Point Rd,2022-10-03,2026-10-01,Asked about rental properties\n",
+    "output": {
+      "checked": 4,
+      "due": 3,
+      "notes": [
+        {
+          "client": "Morgan Lee",
+          "email": "morgan.lee@example.com",
+          "reason": "Home anniversary: 3 year(s) in 118 Oak Hollow Ln",
+          "subject": "Thinking of you at 118 Oak Hollow Ln",
+          "body": "Hi Morgan,\n\nI was going through my calendar and saw it's been a while. How is everything at 118 Oak Hollow Ln? Last time you mentioned planned to redo the backyard. How did that go?\n\nI'm around if you or a friend ever need anything.\n\nJordan Rivera",
+          "sms": "Hi Morgan, Jordan Rivera here. Just checking in on you and 118 Oak Hollow Ln. Hope all is well!"
+        },
+        {
+          "client": "Casey Nguyen",
+          "email": "casey.nguyen@example.com",
+          "reason": "No contact in 10 months",
+          "subject": "Thinking of you at 2207 Elm Park Ct",
+          "body": "Hi Casey,\n\nI was going through my calendar and saw it's been a while. How is everything at 2207 Elm Park Ct? Last time you mentioned started a home bakery. How did that go?\n\nI'm around if you or a friend ever need anything.\n\nJordan Rivera",
+          "sms": "Hi Casey, Jordan Rivera here. Just checking in on you and 2207 Elm Park Ct. Hope all is well!"
+        },
+        {
+          "client": "Avery Kim",
+          "email": "avery.kim@example.com",
+          "reason": "Home anniversary: 4 year(s) in 77 Cedar Point Rd",
+          "subject": "Thinking of you at 77 Cedar Point Rd",
+          "body": "Hi Avery,\n\nI was going through my calendar and saw it's been a while. How is everything at 77 Cedar Point Rd? Last time you mentioned asked about rental properties. How did that go?\n\nI'm around if you or a friend ever need anything.\n\nJordan Rivera",
+          "sms": "Hi Avery, Jordan Rivera here. Just checking in on you and 77 Cedar Point Rd. Hope all is well!"
+        }
+      ]
+    }
+  }
+}
