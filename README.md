@@ -38,6 +38,10 @@ With no `ANTHROPIC_API_KEY` the app returns sample content. With `DEV_SKIP_PAYME
 - `ANTHROPIC_API_KEY` set, and several real resumes tested for quality.
 - `RESEND_API_KEY` and a verified sending domain, so customers get their order link by email.
 
+## AI automations page (/ai)
+
+`app/ai_site/` is a static services page and demo for US real-estate agents, served at `/ai/` (`/ai` redirects there). It is plain HTML, CSS and JS with no server logic and no API key. The source and the build script live in the Agent Autopilot project; copy its `site/` folder here to update.
+
 ## Blog
 
 Posts are Markdown files in `app/content/blog/` (the file name is the URL slug). Each starts with a front-matter

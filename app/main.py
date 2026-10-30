@@ -32,6 +32,16 @@ ALLOWED_EXT = {".pdf", ".docx", ".doc", ".rtf", ".odt", ".txt"}
 
 app = FastAPI(title=config.SITE_NAME, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
+
+
+@app.get("/ai", include_in_schema=False)
+def ai_page_slash():
+    # The /ai pages use relative links, so they need the trailing slash.
+    return RedirectResponse("/ai/", status_code=301)
+
+
+# AI automations for US real-estate agents: a static services page and demo, no server-side logic.
+app.mount("/ai", StaticFiles(directory=BASE / "ai_site", html=True), name="ai_site")
 templates = Jinja2Templates(directory=BASE / "templates")
 templates.env.globals.update(linkedin_posts=lambda limit=None: linkedin.posts(limit), cfg=config, year=datetime.now().year, me=PROFILE, resume_templates=render.TEMPLATES,
                              latest_posts=blog.POSTS[:3],
@@ -261,7 +271,7 @@ for _path, _template in STATIC_PAGES.items():
     app.add_api_route(_path, _static_page(_template), methods=["GET"], response_class=HTMLResponse)
 
 
-PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy"]
+PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy", "/ai/", "/ai/demo.html"]
 
 
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User",
