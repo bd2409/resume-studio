@@ -12,6 +12,7 @@
     <div class="card price-card">
       <h3>Resume + cover letter</h3>
       <div class="price">Rs {{ cfg.PRICE_RUPEES }} <small>per resume</small></div>
+      {% if cfg.FREE_TRIAL %}<p style="color:var(--ok);font-weight:700;margin:-6px 0 10px">Your first one is free</p>{% endif %}
       <ul class="checks">
         <li>Written for one specific job description, or improved for the role you want</li>
         <li>Matching cover letter included</li>

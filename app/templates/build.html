@@ -6,6 +6,7 @@
     <h1>Let's get started</h1>
     <p>Upload your resumes and tell us what you're aiming for. Pick what you'd like below; you pay once on the next step.</p>
   </div>
+  {% if cfg.FREE_TRIAL %}<div class="alert ok" style="margin-top:18px"><strong>Your first resume + cover letter is free.</strong> Choose "Resume + cover letter" below. Each person gets one free resume; after that it's Rs {{ cfg.PRICE_RUPEES }}.</div>{% endif %}
   <form class="form-card" method="post" action="/build" enctype="multipart/form-data" id="build-form" style="margin:24px 0 60px">
     {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
     {% set product = form.product or request.query_params.get('product') or 'resume' %}

@@ -35,7 +35,7 @@
     <div class="form-card" style="margin-bottom:60px;text-align:center">
       <h2 style="color:var(--navy-dark);margin-top:0">Want all of this fixed for you?</h2>
       <p>We rewrite your resume from your real experience, tailored to the job you want, with every fix above applied. Editable Word and PDF, plus a cover letter.</p>
-      <a class="btn big gold" href="/build">Rewrite my resume for Rs {{ cfg.PRICE_RUPEES }}</a>
+      <a class="btn big gold" href="/build">{% if cfg.FREE_TRIAL %}Rewrite my resume free{% else %}Rewrite my resume for Rs {{ cfg.PRICE_RUPEES }}{% endif %}</a>
       <p style="margin-top:14px;font-size:14px"><a href="/free/playbook">Get the free 35+ playbook</a> · <a href="/book/claude">Learn Claude 1:1</a> · <a href="/build?product=premium">Premium, reviewed by {{ cfg.OWNER_NAME }}</a></p>
     </div>
   {% else %}
