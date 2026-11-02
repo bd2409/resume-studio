@@ -6,7 +6,7 @@
 <div class="wrap narrow">
   <div class="page-head">
     <h1>Almost there</h1>
-    <p>{% if product.service %}Pay securely to confirm your booking.{% else %}Pay securely and we'll start right away.{% endif %}</p>
+    <p>{% if free_trial == "eligible" %}Your first resume is on us. Click below and we'll start right away.{% elif product.service %}Pay securely to confirm your booking.{% else %}Pay securely and we'll start right away.{% endif %}</p>
   </div>
   <div class="form-card" style="margin:24px 0 60px">
     <div id="pay-error" class="alert err" {% if not payment_failed %}style="display:none"{% endif %}>{% if payment_failed %}Your payment was not completed. If money was deducted, it will be confirmed automatically within a few minutes: refresh this page. Otherwise, please try again.{% endif %}</div>
@@ -15,7 +15,7 @@
       <tr><td>Email</td><td>{{ order.email }}</td></tr>
       {% if file_count %}<tr><td>Resumes uploaded</td><td>{{ file_count }}</td></tr>{% endif %}
       {% if extra.company %}<tr><td>Company</td><td>{{ extra.company }}</td></tr>{% endif %}
-      <tr><td>{{ product.label }}</td><td>Rs {{ '{:,}'.format((order.amount_paise // 100)) }}</td></tr>
+      <tr><td>{{ product.label }}</td><td>{% if free_trial == "eligible" %}<s>Rs {{ '{:,}'.format((order.amount_paise // 100)) }}</s> <strong style="color:var(--ok)">Free</strong>{% else %}Rs {{ '{:,}'.format((order.amount_paise // 100)) }}{% endif %}</td></tr>
     </table>
     {% if free_trial == "eligible" %}
       <div class="alert ok" style="margin-top:4px"><strong>Your first resume is free.</strong> You get the full resume and cover letter, editable Word and PDF, at no cost. Each person gets one free resume; after that it's Rs {{ cfg.PRICE_RUPEES }}.</div>

@@ -4,7 +4,7 @@
 <div class="wrap narrow">
   <div class="page-head">
     <h1>Let's get started</h1>
-    <p>Upload your resumes and tell us what you're aiming for. Pick what you'd like below; you pay once on the next step.</p>
+    <p>Upload your resumes and tell us what you're aiming for. Pick what you'd like below.{% if cfg.FREE_TRIAL %} Your first resume + cover letter is free; other services are paid once on the next step.{% else %} You pay once on the next step.{% endif %}</p>
   </div>
   {% if cfg.FREE_TRIAL %}<div class="alert ok" style="margin-top:18px"><strong>Your first resume + cover letter is free.</strong> Choose "Resume + cover letter" below. Each person gets one free resume; after that it's Rs {{ cfg.PRICE_RUPEES }}.</div>{% endif %}
   <form class="form-card" method="post" action="/build" enctype="multipart/form-data" id="build-form" style="margin:24px 0 60px">
@@ -15,7 +15,7 @@
     <div class="mode-pick prod-pick">
       {% for key in cfg.CAREER_PRODUCTS %}{% set pr = cfg.PRODUCTS[key] %}
       <label class="mode{% if product == key %} on{% endif %}" data-resume="{{ 1 if pr.resume else 0 }}"><input type="radio" name="product" value="{{ key }}" {% if product == key %}checked{% endif %}>
-        <strong>{{ pr.icon }} {{ pr.label }}</strong><span>Rs {{ '{:,}'.format(pr.price) }}{% if key == 'bundle' %} · save Rs {{ '{:,}'.format(cfg.PRICE_RUPEES + cfg.PRICE_LINKEDIN - cfg.PRICE_BUNDLE) }}{% elif key == 'premium' %} · reviewed by {{ cfg.OWNER_NAME }}{% endif %}</span></label>
+        <strong>{{ pr.icon }} {{ pr.label }}</strong><span>{% if key == 'resume' and cfg.FREE_TRIAL %}<b style="color:var(--ok)">First one free</b> · then Rs {{ '{:,}'.format(pr.price) }}{% else %}Rs {{ '{:,}'.format(pr.price) }}{% endif %}{% if key == 'bundle' %} · save Rs {{ '{:,}'.format(cfg.PRICE_RUPEES + cfg.PRICE_LINKEDIN - cfg.PRICE_BUNDLE) }}{% elif key == 'premium' %} · reviewed by {{ cfg.OWNER_NAME }}{% endif %}</span></label>
       {% endfor %}
     </div>
     <p class="prod-blurb" id="prod-blurb"></p>
