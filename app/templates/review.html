@@ -195,7 +195,11 @@
           <button class="btn light" style="margin-top:10px">Regenerate</button>
         </form>
         {% else %}
+        {% if (order.rzp_payment_id or '').startswith('free_') %}
+        <p>AI rewrites aren't part of the free resume. You can still edit any line and switch designs above. Want another version for a different job? <a href="/build">Build a new resume for Rs {{ cfg.PRICE_RUPEES }}</a>.</p>
+        {% else %}
         <p>You've used all your free regenerations. You can still edit above.</p>
+        {% endif %}
         {% endif %}
       </div>
       {% else %}

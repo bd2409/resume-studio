@@ -68,6 +68,10 @@ PRICE_AUDIT = int(os.getenv("PRICE_AUDIT", "7999"))
 PRICE_CLAUDE = int(os.getenv("PRICE_CLAUDE", "2499"))
 # Free AI resume checks per day (the lead magnet), to cap AI spend.
 FREE_CHECKS_PER_DAY = int(os.getenv("FREE_CHECKS_PER_DAY", "40"))
+# One free resume + cover letter per person (same email, phone, Google account or browser), then they pay.
+FREE_TRIAL = _bool("FREE_TRIAL", True)
+# Free resumes per day across everyone, to cap AI spend.
+FREE_TRIALS_PER_DAY = int(os.getenv("FREE_TRIALS_PER_DAY", "25"))
 
 # Optional scheduling link (Calendly, Google Calendar booking page, ...) shown after a call is paid for.
 CALL_BOOKING_URL = os.getenv("CALL_BOOKING_URL", "")

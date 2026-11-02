@@ -7,7 +7,7 @@ def items():
         ("What do I need to get started?",
          f"At least one of your existing resumes (PDF or Word) and the job description you're applying for, or just the kind of role you want. Uploading several versions of your resume (up to {c.MAX_RESUMES}) helps us find more of your achievements."),
         ("How much does a professional resume cost?",
-         f"A tailored resume with a matching cover letter costs Rs {c.PRICE_RUPEES}, paid once. There's no subscription. A LinkedIn makeover is Rs {c.PRICE_LINKEDIN}, and a resume + LinkedIn bundle is Rs {c.PRICE_BUNDLE:,}."),
+         f"A tailored resume with a matching cover letter costs Rs {c.PRICE_RUPEES}, paid once. There's no subscription." + (" Your first resume and cover letter are free, so you can see the quality before you pay." if c.FREE_TRIAL else "") + f" A LinkedIn makeover is Rs {c.PRICE_LINKEDIN}, and a resume + LinkedIn bundle is Rs {c.PRICE_BUNDLE:,}."),
         ("Will you add skills or experience I don't have?",
          "No. We only use facts from the resumes you upload. Every line is checked against them before you see it. If the job asks for something your resumes don't mention, we list it as a suggestion so you can add it yourself if it's true."),
         ("Is the resume ATS-friendly?",

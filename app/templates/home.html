@@ -3,14 +3,14 @@
 <section class="hero">
   <div class="wrap">
     <div>
-      <span class="eyebrow">Resume + cover letter · Rs {{ cfg.PRICE_RUPEES }} once · no subscription</span>
+      <span class="eyebrow">Resume + cover letter · {% if cfg.FREE_TRIAL %}first one free · then {% endif %}Rs {{ cfg.PRICE_RUPEES }} once · no subscription</span>
       <h1>Your job-winning resume, written for you in minutes.</h1>
       <p class="lead">Upload your existing resumes. We turn your real experience into a polished, ATS-friendly resume and a matching cover letter, tailored to the job you want. Editable Word and PDF.</p>
       <div class="cta-row">
         <a class="btn big" href="/build?mode=tailor">Tailor to a job</a>
         <a class="btn big light" href="/build?mode=improve">Improve my resume</a>
       </div>
-      <p class="price-note">One-time payment of Rs {{ cfg.PRICE_RUPEES }}. No trial, no auto-renewal. Free edits and design changes for {{ cfg.EDIT_WINDOW_DAYS }} days.</p>
+      <p class="price-note">{% if cfg.FREE_TRIAL %}Your first resume and cover letter are free. After that, Rs {{ cfg.PRICE_RUPEES }} each, paid once.{% else %}One-time payment of Rs {{ cfg.PRICE_RUPEES }}.{% endif %} No subscription, no auto-renewal. Free edits and design changes for {{ cfg.EDIT_WINDOW_DAYS }} days.</p>
     </div>
     <div class="hero-stack" aria-hidden="true">
       {% for key in ['minimal', 'modern', 'executive', 'classic'] %}
@@ -30,7 +30,7 @@
     <div class="grid four">
       <div class="card"><div class="step-num">1</div><h3>Upload your resumes</h3><p>Add up to {{ cfg.MAX_RESUMES }} past resumes (PDF or Word). More versions give us more of your real achievements to work with.</p></div>
       <div class="card"><div class="step-num">2</div><h3>Add the job, pick a design</h3><p>Paste the job posting (or just name the role you want) and choose one of {{ resume_templates | length }} designs.</p></div>
-      <div class="card"><div class="step-num">3</div><h3>Pay Rs {{ cfg.PRICE_RUPEES }}</h3><p>Secure payment by UPI, card, netbanking or wallet through Cashfree Payments.</p></div>
+      <div class="card"><div class="step-num">3</div><h3>{% if cfg.FREE_TRIAL %}First one free{% else %}Pay Rs {{ cfg.PRICE_RUPEES }}{% endif %}</h3><p>{% if cfg.FREE_TRIAL %}Your first resume costs nothing. After that, Rs {{ cfg.PRICE_RUPEES }} each, paid securely{% else %}Secure payment{% endif %} by UPI, card, netbanking or wallet through Cashfree Payments.</p></div>
       <div class="card"><div class="step-num">4</div><h3>Review and download</h3><p>See your job-match score, edit any line, switch designs, and download your resume and cover letter.</p></div>
     </div>
   </div>
