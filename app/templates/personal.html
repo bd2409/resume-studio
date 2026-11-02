@@ -186,7 +186,7 @@
         <li>Interview prep, outreach messages, salary negotiation scripts and <a href="/book/call">1:1 career calls</a>: <a href="/services">see all services</a></li>
       </ul>
       <div class="p-actions">
-        <a class="btn big gold" href="/build">Build my resume for Rs {{ cfg.PRICE_RUPEES }}</a>
+        <a class="btn big gold" href="/build">{% if cfg.FREE_TRIAL %}Build my first resume free{% else %}Build my resume for Rs {{ cfg.PRICE_RUPEES }}{% endif %}</a>
         <a class="btn big ghost" href="/resume">How it works</a>
       </div>
     </div>

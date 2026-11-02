@@ -7,8 +7,8 @@
       <h1>Your job-winning resume, written for you in minutes.</h1>
       <p class="lead">Upload your existing resumes. We turn your real experience into a polished, ATS-friendly resume and a matching cover letter, tailored to the job you want. Editable Word and PDF.</p>
       <div class="cta-row">
-        <a class="btn big" href="/build?mode=tailor">Tailor to a job</a>
-        <a class="btn big light" href="/build?mode=improve">Improve my resume</a>
+        <a class="btn big" href="/build?mode=tailor">Tailor to a job{% if cfg.FREE_TRIAL %} (free){% endif %}</a>
+        <a class="btn big light" href="/build?mode=improve">Improve my resume{% if cfg.FREE_TRIAL %} (free){% endif %}</a>
       </div>
       <p class="price-note">{% if cfg.FREE_TRIAL %}Your first resume and cover letter are free. After that, Rs {{ cfg.PRICE_RUPEES }} each, paid once.{% else %}One-time payment of Rs {{ cfg.PRICE_RUPEES }}.{% endif %} No subscription, no auto-renewal. Free edits and design changes for {{ cfg.EDIT_WINDOW_DAYS }} days.</p>
     </div>
@@ -132,6 +132,6 @@
 <div class="cta-band">
   <h2>Applying for a role this week?</h2>
   <p>Get a resume written for it in minutes.</p>
-  <a class="btn big gold" href="/build">Build my resume for Rs {{ cfg.PRICE_RUPEES }}</a>
+  <a class="btn big gold" href="/build">{% if cfg.FREE_TRIAL %}Build my first resume free{% else %}Build my resume for Rs {{ cfg.PRICE_RUPEES }}{% endif %}</a>
 </div>
 {% endblock %}
