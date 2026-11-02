@@ -17,6 +17,17 @@
       {% if extra.company %}<tr><td>Company</td><td>{{ extra.company }}</td></tr>{% endif %}
       <tr><td>{{ product.label }}</td><td>Rs {{ '{:,}'.format((order.amount_paise // 100)) }}</td></tr>
     </table>
+    {% if free_trial == "eligible" %}
+      <div class="alert ok" style="margin-top:4px"><strong>Your first resume is free.</strong> You get the full resume and cover letter, editable Word and PDF, at no cost. Each person gets one free resume; after that it's Rs {{ cfg.PRICE_RUPEES }}.</div>
+      <form method="post" action="/order/{{ order.token }}/free">
+        <button class="btn big" style="width:100%">Create my free resume</button>
+      </form>
+    {% else %}
+    {% if free_trial == "used" %}
+      <div class="alert warn">You've already used your free resume{% if request.query_params.get('free') %} with this email, phone or browser{% endif %}. This one is Rs {{ '{:,}'.format((order.amount_paise // 100)) }}.</div>
+    {% elif free_trial == "full" %}
+      <div class="alert warn">Today's free resumes are all taken. Come back tomorrow for yours, or pay now to start right away.</div>
+    {% endif %}
     {% if cashfree %}
       {% if cf_mode == "sandbox" %}<div class="alert warn">Cashfree test mode: use Cashfree's test UPI or card details. No real money is charged.</div>{% endif %}
       <button class="btn big" id="pay-btn" style="width:100%">Pay Rs {{ '{:,}'.format((order.amount_paise // 100)) }}</button>
@@ -28,6 +39,7 @@
       </form>
     {% else %}
       <div class="alert err">Payments are temporarily unavailable. Please try again later.</div>
+    {% endif %}
     {% endif %}
     {% if not dev_skip %}
     <form method="post" action="/order/{{ order.token }}/owner-pay" style="margin-top:14px;text-align:center">

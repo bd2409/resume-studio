@@ -66,6 +66,34 @@ def current_user_email(request):
     return user["email"] if user else None
 
 
+DEVICE_COOKIE = "rs_device"
+
+
+def device_id(request):
+    """A random id kept in a long-lived cookie, so one browser gets one free resume even with a new email."""
+    value = request.cookies.get(DEVICE_COOKIE, "")
+    return value if re.fullmatch(r"[A-Za-z0-9_-]{16,64}", value) else None
+
+
+def remember_device(response, value):
+    response.set_cookie(DEVICE_COOKIE, value, max_age=5 * 365 * 86400, httponly=True, samesite="lax",
+                        secure=config.SITE_URL.startswith("https"))
+    return response
+
+
+def free_trial_state(request, order):
+    """None when the free resume doesn't apply to this order, else "eligible", "used" or "full" (today's are gone)."""
+    if not (config.FREE_TRIAL and order["status"] == "awaiting_payment" and (order.get("product") or "resume") == "resume"
+            and not order.get("parent_id") and (config.AI_MODE == "live" or config.DEV_SKIP_PAYMENT)):
+        return None
+    if db.free_trial_used(order["email"], order["phone"], current_user_email(request) or order.get("user_email"),
+                          device_id(request) or order.get("device_id"), exclude_id=order["id"]):
+        return "used"
+    if db.free_trials_today() >= config.FREE_TRIALS_PER_DAY:
+        return "full"
+    return "eligible"
+
+
 def page(request, name, **ctx):
     ctx.setdefault("user", current_user(request))
     return templates.TemplateResponse(request, name, ctx)
@@ -505,10 +533,11 @@ async def build_submit(
     order = db.create_order(customer_name.strip(), email.strip(), phone.strip(), job_description.strip(),
                             [], config.PRODUCTS[product]["price"] * 100)
     extra = {"offer_details": offer_details.strip()[:3000]} if product == "salary" else {}
+    device = device_id(request) or secrets.token_urlsafe(18)
     db.update(order["id"], files_json=json.dumps(store_uploads(order["id"], saved)), template=template,
               target_role=target_role.strip()[:120], product=product, extra_json=json.dumps(extra),
-              user_email=current_user_email(request))
-    return RedirectResponse(f"/order/{order['token']}", status_code=303)
+              user_email=current_user_email(request), device_id=device)
+    return remember_device(RedirectResponse(f"/order/{order['token']}", status_code=303), device)
 
 
 async def read_uploads(files):
@@ -729,7 +758,7 @@ def order_page(request: Request, token: str):
         return page(request, "pay.html", order=order, cashfree=checkout_open(request), cf_mode=payments.mode(),
                     payment_failed=request.query_params.get("payment") == "failed",
                     dev_skip=config.DEV_SKIP_PAYMENT, file_count=len(json.loads(order["files_json"])),
-                    product=product, extra=extra_of(order))
+                    product=product, extra=extra_of(order), free_trial=free_trial_state(request, order))
     if status in ("paid", "generating"):
         return page(request, "progress.html", order=order)
     if product["service"]:
@@ -858,6 +887,28 @@ def payment_return(token: str, background: BackgroundTasks):
         log.exception("Payment check failed for %s", order["id"])
         paid = False
     return RedirectResponse(f"/order/{token}" + ("" if paid else "?payment=failed"), status_code=303)
+
+
+_free_lock = threading.Lock()
+
+
+@app.post("/order/{token}/free")
+def free_trial(token: str, request: Request, background: BackgroundTasks):
+    """Each person's first resume + cover letter is free. Later ones are paid as usual."""
+    with _free_lock:  # so two tabs can't both claim the free resume
+        order = load_order(token)
+        state = free_trial_state(request, order)
+        if state != "eligible":
+            return RedirectResponse(f"/order/{token}" + (f"?free={state}" if state else ""), status_code=303)
+        # A free resume gets no AI rewrites; editing and design changes still work.
+        db.update(order["id"], amount_paise=0, regenerations=config.MAX_REGENERATIONS,
+                  user_email=order["user_email"] or current_user_email(request),
+                  device_id=device_id(request) or order["device_id"])
+        if db.mark_paid(order["id"], db.FREE_PREFIX + secrets.token_hex(4)):
+            start_generation(background, order["id"])
+    response = RedirectResponse(f"/order/{token}", status_code=303)
+    device = device_id(request) or order["device_id"]
+    return remember_device(response, device) if device else response
 
 
 @app.post("/order/{token}/dev-pay")

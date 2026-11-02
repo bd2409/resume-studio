@@ -17,7 +17,7 @@
     </ul>
 
     <h2>3. Price and payment</h2>
-    <p>Prices are shown before payment: Rs {{ cfg.PRICE_RUPEES }} for a resume and cover letter, Rs {{ cfg.PRICE_LINKEDIN }} for a LinkedIn profile makeover, Rs {{ cfg.PRICE_BUNDLE }} for both, and Rs {{ cfg.PRICE_VERSION }} for an extra job version of an existing order. These are one-time payments, not subscriptions. Payments are processed by Cashfree Payments. Your order is processed once payment is confirmed.</p>
+    <p>Prices are shown before payment: Rs {{ cfg.PRICE_RUPEES }} for a resume and cover letter, Rs {{ cfg.PRICE_LINKEDIN }} for a LinkedIn profile makeover, Rs {{ cfg.PRICE_BUNDLE }} for both, and Rs {{ cfg.PRICE_VERSION }} for an extra job version of an existing order. These are one-time payments, not subscriptions.{% if cfg.FREE_TRIAL %} Each person's first resume and cover letter is free (one per person, checked by email, phone number, account and browser), with editing and design changes but no AI rewrites.{% endif %} Payments are processed by Cashfree Payments. Your order is processed once payment is confirmed.</p>
 
     <h2>4. Edits and regenerations</h2>
     <p>For {{ cfg.EDIT_WINDOW_DAYS }} days after payment you may edit your resume on the review page and regenerate it up to {{ cfg.MAX_REGENERATIONS }} times for the same job description. A different job description is a new order.</p>

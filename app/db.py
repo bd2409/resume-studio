@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS orders (
     linkedin_json   TEXT,
     pack_json       TEXT,
     extra_json      TEXT,
+    device_id       TEXT,
     updated_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS orders_rzp ON orders (rzp_order_id);
@@ -75,7 +76,7 @@ def init():
         for col, ddl in (("template", "TEXT NOT NULL DEFAULT 'classic'"), ("target_role", "TEXT NOT NULL DEFAULT ''"),
                          ("cover_json", "TEXT"), ("user_email", "TEXT"),
                          ("product", "TEXT NOT NULL DEFAULT 'resume'"), ("parent_id", "TEXT"), ("linkedin_json", "TEXT"),
-                         ("pack_json", "TEXT"), ("extra_json", "TEXT")):
+                         ("pack_json", "TEXT"), ("extra_json", "TEXT"), ("device_id", "TEXT")):
             if col not in cols:
                 c.execute(f"ALTER TABLE orders ADD COLUMN {col} {ddl}")
 
@@ -127,6 +128,40 @@ def mark_paid(order_id, payment_id):
             (payment_id, now(), now(), order_id),
         )
         return cur.rowcount == 1
+
+
+FREE_PREFIX = "free_"
+
+
+def _phone_key(phone):
+    return "".join(ch for ch in phone or "" if ch.isdigit())[-10:]
+
+
+def free_trial_used(email, phone, user_email=None, device_id=None, exclude_id=None):
+    """True if this person already had their free resume: same email, phone (last 10 digits),
+    Google account or browser as an earlier free order."""
+    emails = {e.strip().lower() for e in (email, user_email) if e}
+    phone = _phone_key(phone)
+    with conn() as c:
+        rows = c.execute("SELECT id, email, phone, user_email, device_id FROM orders WHERE rzp_payment_id LIKE ?",
+                         (FREE_PREFIX + "%",)).fetchall()
+    for r in rows:
+        if r["id"] == exclude_id:
+            continue
+        if {(r["email"] or "").lower(), (r["user_email"] or "").lower()} & emails:
+            return True
+        if len(phone) == 10 and _phone_key(r["phone"]) == phone:
+            return True
+        if device_id and r["device_id"] == device_id:
+            return True
+    return False
+
+
+def free_trials_today():
+    today = datetime.now(timezone.utc).date().isoformat()
+    with conn() as c:
+        return c.execute("SELECT COUNT(*) FROM orders WHERE rzp_payment_id LIKE ? AND paid_at >= ?",
+                         (FREE_PREFIX + "%", today)).fetchone()[0]
 
 
 def recent(limit=200):
