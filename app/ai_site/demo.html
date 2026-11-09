@@ -75,7 +75,9 @@ $("check-in").addEventListener("input", runCheck);
 runCheck();
 
 const data = await fetch("data.json").then((r) => r.json());
-$("source").textContent = data.generated_by === "sample"
+$("source").textContent = data.generated_by === "example"
+  ? "Example output: written for this demo to show the format and quality. In real use, Claude writes a fresh reply for each lead, listing and client."
+  : data.generated_by === "sample"
   ? "These are sample outputs that show the format. Real replies are written by AI for each lead."
   : `Real output from ${data.generated_by}, generated ${data.generated_at}. Nothing edited.`;
 
