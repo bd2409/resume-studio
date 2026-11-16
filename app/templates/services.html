@@ -6,7 +6,7 @@
   <div class="icon">{{ pr.icon }}</div>
   <h3>{{ pr.label }}</h3>
   <p>{{ pr.blurb }}</p>
-  <div class="svc-price">Rs {{ '{:,}'.format(pr.price) }}</div>
+  <div class="svc-price">{% if key == 'resume' and cfg.FREE_TRIAL %}First one free, then Rs {{ '{:,}'.format(pr.price) }}{% else %}Rs {{ '{:,}'.format(pr.price) }}{% endif %}</div>
   <a class="btn small" href="{{ href }}">{{ cta }}</a>
 </div>
 {% endmacro %}

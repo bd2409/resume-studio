@@ -79,4 +79,12 @@ def load():
 
 
 POSTS = load()
+
+
+def featured(slugs, count=3):
+    """The posts with these slugs, in this order, topped up with the latest posts if any are missing."""
+    by_slug = {p["slug"]: p for p in POSTS}
+    picked = [by_slug[s] for s in slugs if s in by_slug]
+    picked += [p for p in POSTS if p not in picked][:max(0, count - len(picked))]
+    return picked[:count]
 BY_SLUG = {p["slug"]: p for p in POSTS}

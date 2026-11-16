@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Free startup marketing scorecard | {{ cfg.OWNER_NAME }}{% endblock %}
+{% block description %}Answer 10 yes-or-no questions and get a score out of 100 for your startup's marketing engine, with the gaps to fix first. Free, no sign-up.{% endblock %}
+{% block content %}
+<section class="block soft">
+  <div class="wrap narrow">
+    <div class="section-title">
+      <h2>How strong is your marketing engine?</h2>
+      <p>10 yes-or-no questions, 2 minutes. Answer honestly: "sort of" counts as no. You get a score out of 100 and the gaps to fix first. Nothing is stored or sent anywhere.</p>
+    </div>
+    <form id="sc" class="card sc-form">
+      {% set questions = [
+        ("Positioning", "Can anyone on your team say, in one sentence, who you're for and why you beat the alternative?", "Write a one-line positioning statement and use it on your homepage, deck and ads."),
+        ("Positioning", "Have you spoken to at least 10 customers in the last 3 months about why they bought?", "Talk to 10 customers this month. Their words become your best copy."),
+        ("Brand", "Do your logo, colours, tone and story look the same on your website, decks and social pages?", "Make a one-page brand guide and fix the three places that look most off."),
+        ("Website", "Does your homepage say what you do and who it's for within 5 seconds?", "Rewrite your hero line so a stranger understands it in 5 seconds."),
+        ("Website", "Does every key page have one clear next step (book a demo, buy, sign up)?", "Give each page one main call to action and remove the rest."),
+        ("Channels", "Do you have one or two channels that bring leads or sales every month, predictably?", "Pick one channel that fits your buyer and run it properly for 90 days before adding more."),
+        ("Channels", "Do you know your cost per lead or cost per sale for each paid channel?", "Track cost per lead by channel; pause anything you can't measure."),
+        ("Content", "Do you publish something useful for your buyers at least every two weeks?", "Plan 6 posts from questions customers actually ask, and publish every two weeks."),
+        ("Measurement", "Do you review one simple marketing dashboard every week?", "Set up a one-page weekly dashboard: traffic, leads, cost per lead, sales."),
+        ("Measurement", "Can you trace where your last 10 customers first heard about you?", "Add 'How did you hear about us?' to every form and sales call."),
+      ] %}
+      <ol class="sc-list">
+      {% for area, q, fix in questions %}
+        <li data-area="{{ area }}" data-fix="{{ fix }}">
+          <p><span class="sc-area">{{ area }}</span>{{ q }}</p>
+          <label><input type="radio" name="q{{ loop.index }}" value="1" required> Yes</label>
+          <label><input type="radio" name="q{{ loop.index }}" value="0"> No</label>
+        </li>
+      {% endfor %}
+      </ol>
+      <button class="btn big" type="submit">See my score</button>
+    </form>
+    <div id="result" class="card sc-result" hidden>
+      <p class="sc-score"><strong id="score">0</strong>/100</p>
+      <p id="verdict" class="sc-verdict"></p>
+      <h3 id="fix-title">Fix these first</h3>
+      <ul id="fixes" class="checks"></ul>
+      <div class="p-actions" style="margin-top:20px">
+        <a class="btn big" href="/book/audit">Get a full marketing audit (Rs {{ '{:,}'.format(cfg.PRICE_AUDIT) }})</a>
+        <a class="btn big light" href="/blog/startup-marketing-engine-checklist">Read the full checklist</a>
+      </div>
+      <p style="margin-top:16px;color:var(--muted)">Prefer to talk first? <a href="/#contact">Book a free 30-minute call with {{ cfg.OWNER_NAME }}</a>.</p>
+    </div>
+  </div>
+</section>
+<style>
+.sc-list { margin: 0 0 20px; padding-left: 22px; }
+.sc-list li { padding: 14px 0; border-bottom: 1px dashed #dde3ec; }
+.sc-list li p { margin: 0 0 8px; font-weight: 600; color: var(--navy-dark); }
+.sc-list label { margin-right: 18px; cursor: pointer; }
+.sc-area { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-right: 8px; }
+.sc-score { font-size: 22px; margin: 0; color: var(--muted); }
+.sc-score strong { font-size: 56px; color: var(--navy-dark); }
+.sc-verdict { font-size: 18px; font-weight: 600; }
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('sc').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var items = document.querySelectorAll('.sc-list li'), yes = 0, fixes = [];
+  items.forEach(function (li, i) {
+    var picked = document.querySelector('input[name="q' + (i + 1) + '"]:checked');
+    if (picked && picked.value === '1') yes++; else fixes.push(li.dataset.area + ': ' + li.dataset.fix);
+  });
+  var score = yes * 10;
+  document.getElementById('score').textContent = score;
+  document.getElementById('verdict').textContent =
+    score >= 80 ? 'Strong engine. Now it is about scaling what works.' :
+    score >= 50 ? 'The parts are there, but the engine leaks. A few fixes will show up in leads quickly.' :
+    'Marketing is running on effort, not a system. Start with the basics below.';
+  var ul = document.getElementById('fixes'); ul.innerHTML = '';
+  fixes.slice(0, 4).forEach(function (f) { var li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
+  document.getElementById('fix-title').hidden = fixes.length === 0;
+  var r = document.getElementById('result'); r.hidden = false; r.scrollIntoView({ behavior: 'smooth' });
+});
+</script>
+{% endblock %}
