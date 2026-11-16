@@ -44,7 +44,9 @@ services:
         value: "false"
       - key: RESEND_API_KEY
         sync: false
+      # Set in the Render dashboard (must use a domain verified in Resend). sync: false stops
+      # blueprint syncs from overwriting the value set there.
       - key: EMAIL_FROM
-        value: Resume Studio <orders@bhargabdas.in>
+        sync: false
       - key: ADMIN_PASSWORD
         generateValue: true
