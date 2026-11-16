@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Resume writing price in India: Rs {{ cfg.PRICE_RUPEES }} | {{ cfg.SITE_NAME }}{% endblock %}
-{% block description %}A tailored, ATS-friendly resume and cover letter for Rs {{ cfg.PRICE_RUPEES }}, LinkedIn makeover Rs {{ cfg.PRICE_LINKEDIN }}, bundle Rs {{ '{:,}'.format(cfg.PRICE_BUNDLE) }}. One-time payment, no subscription.{% endblock %}
+{% block title %}Resume writing price in India: {% if cfg.FREE_TRIAL %}first one free, then {% endif %}Rs {{ cfg.PRICE_RUPEES }} | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}A tailored, ATS-friendly resume and cover letter for Rs {{ cfg.PRICE_RUPEES }}{% if cfg.FREE_TRIAL %} (your first one is free){% endif %}, LinkedIn makeover Rs {{ cfg.PRICE_LINKEDIN }}, bundle Rs {{ '{:,}'.format(cfg.PRICE_BUNDLE) }}. One-time payment, no subscription.{% endblock %}
 {% block content %}
 <section class="block soft">
   <div class="wrap">
@@ -11,8 +11,9 @@
     <div class="price-row">
     <div class="card price-card">
       <h3>Resume + cover letter</h3>
-      <div class="price">Rs {{ cfg.PRICE_RUPEES }} <small>per resume</small></div>
-      {% if cfg.FREE_TRIAL %}<p style="color:var(--ok);font-weight:700;margin:-6px 0 10px">Your first one is free</p>{% endif %}
+      {% if cfg.FREE_TRIAL %}<div class="price" style="font-size:40px;line-height:1.3">First one free</div>
+      <p style="color:var(--ok);font-weight:700;margin:-6px 0 10px">Then Rs {{ cfg.PRICE_RUPEES }} per resume</p>
+      {% else %}<div class="price">Rs {{ cfg.PRICE_RUPEES }} <small>per resume</small></div>{% endif %}
       <ul class="checks">
         <li>Written for one specific job description, or improved for the role you want</li>
         <li>Matching cover letter included</li>

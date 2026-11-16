@@ -28,7 +28,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css?v=8">
-  <link rel="stylesheet" href="/static/personal.css?v=2">
+  <link rel="stylesheet" href="/static/personal.css?v=3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='16' fill='%231f3a5f'/><text x='16' y='21' font-size='13' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>{{ me.initials }}</text></svg>">
 </head>
 <body class="personal">
@@ -44,7 +44,7 @@
       <a href="/blog">Blog</a>
       <a href="/free">Free tools</a>
       <a href="#contact">Contact</a>
-      <a class="btn small" href="#contact">Book a call</a>
+      <a class="btn small" href="{{ cfg.CALL_BOOKING_URL or '#contact' }}"{% if cfg.CALL_BOOKING_URL %} target="_blank" rel="noopener"{% endif %}>Book a call</a>
     </div>
   </div>
 </nav>
@@ -56,9 +56,11 @@
       <h1>{{ me.hero_title }}</h1>
       <p class="p-tagline">{{ me.tagline }}</p>
       <div class="p-actions">
-        <a class="btn big" href="#contact">Book a free consultation</a>
+        <a class="btn big" href="{{ cfg.CALL_BOOKING_URL or '#contact' }}"{% if cfg.CALL_BOOKING_URL %} target="_blank" rel="noopener"{% endif %}>Book a free consultation</a>
         <a class="btn big light" href="#services">What I do</a>
       </div>
+      <a class="p-seeker" href="/resume"><span>Job hunting?</span> I market people too. {% if cfg.FREE_TRIAL %}Your first resume is free{% else %}See the resume service{% endif %} →</a>
+      <p class="p-proof">🏅 LinkedIn Top Voice, B2B Marketing 2023</p>
       <div class="p-social">
         <a href="{{ me.linkedin }}" target="_blank" rel="noopener" aria-label="LinkedIn">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
@@ -107,7 +109,10 @@
         <h3 style="margin-top:0">🚀 Start with a marketing audit</h3>
         <p>I review your brand, website, funnel and ads, then walk you through a written 90-day action plan. Rs {{ '{:,}'.format(cfg.PRICE_AUDIT) }}, one time.</p>
       </div>
-      <a class="btn big" href="/book/audit">Book an audit</a>
+      <div class="p-actions">
+        <a class="btn big" href="/book/audit">Book an audit</a>
+        <a class="btn big light" href="/free/marketing-scorecard">Free 2-minute scorecard</a>
+      </div>
     </div>
   </div>
 </section>
@@ -138,10 +143,10 @@
   <div class="wrap">
     <div class="section-title">
       <h2 class="p-h2">Latest from the blog</h2>
-      <p>Practical guides on leadership, marketing and careers.</p>
+      <p>Practical guides for founders growing a startup and professionals growing a career.</p>
     </div>
     <div class="grid three">
-      {% for r in latest_posts %}
+      {% for r in featured_posts %}
       <a class="card blog-card" href="/blog/{{ r.slug }}">
         <span class="blog-meta">{{ r.category }} · {{ r.minutes }} min read</span>
         <h3>{{ r.title }}</h3>
@@ -209,7 +214,8 @@
     <h2 class="p-h2" style="text-align:center">Let's connect</h2>
     <p style="color:var(--muted);font-size:17px">Building a startup or launching a brand? Tell me where you are, and we'll set up a free 30-minute call to map your marketing engine.</p>
     <div class="p-contact">
-      <a class="btn big" href="mailto:{{ me.email }}?subject=Marketing%20consultation">Email {{ me.email }}</a>
+      {% if cfg.CALL_BOOKING_URL %}<a class="btn big" href="{{ cfg.CALL_BOOKING_URL }}" target="_blank" rel="noopener">Pick a time for a free call</a>{% endif %}
+      <a class="btn big{% if cfg.CALL_BOOKING_URL %} light{% endif %}" href="mailto:{{ me.email }}?subject=Marketing%20consultation">Email {{ me.email }}</a>
       <a class="btn big light" href="{{ me.linkedin }}" target="_blank" rel="noopener">Connect on LinkedIn</a>
       
     </div>
@@ -235,6 +241,7 @@
       <a href="/blog">Blog</a>
       <a href="/free">Free tools</a>
       <a href="/free/resume-check">Free resume check</a>
+      <a href="/free/marketing-scorecard">Free marketing scorecard</a>
     </div>
     <div>
       <strong style="color:#fff">Elsewhere</strong>

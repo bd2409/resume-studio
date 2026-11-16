@@ -47,7 +47,7 @@ ul.checks.light li { border-bottom-color: rgba(255,255,255,.15); color: #fff; }
 
 @media (max-width: 900px) {
   .p-hero .wrap, .p-two { grid-template-columns: 1fr; }
-  .p-photo { order: -1; width: min(240px, 70%); }
+  .p-photo { width: min(240px, 70%); justify-self: start; }
   .p-hero { padding: 50px 0; text-align: left; }
 }
 @media (max-width: 600px) {
@@ -69,6 +69,15 @@ ul.checks.light li { border-bottom-color: rgba(255,255,255,.15); color: #fff; }
 .p-music p { margin: 0; color: var(--muted); font-size: 17px; }
 @media (max-width: 900px) {
   .p-stats .wrap { grid-template-columns: repeat(2, 1fr); }
-  .p-photo { width: min(320px, 100%); }
+  .p-photo { width: min(220px, 60%); }
   .p-creds { columns: 1; }
 }
+
+/* Second path for job seekers, and proof, under the hero buttons */
+.p-seeker { display: inline-block; margin-top: 18px; padding: 10px 16px; border-radius: 12px; background: #fff7ea; border: 1px solid #f1d9ad; color: var(--navy-dark); text-decoration: none; font-weight: 600; font-size: 15px; }
+.p-seeker span { color: var(--accent); font-weight: 800; }
+.p-seeker:hover { background: #ffefd6; }
+.p-proof { margin: 14px 0 0; font-size: 14px; font-weight: 600; color: var(--navy); }
+/* Links inside the dark resume section */
+.p-service a:not(.btn) { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.p-service a:not(.btn):hover { color: var(--accent); }

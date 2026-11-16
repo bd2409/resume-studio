@@ -43,8 +43,10 @@ def ai_page_slash():
 # AI automations for US real-estate agents: a static services page and demo, no server-side logic.
 app.mount("/ai", StaticFiles(directory=BASE / "ai_site", html=True), name="ai_site")
 templates = Jinja2Templates(directory=BASE / "templates")
+# Blog posts shown on the home page: one for each audience (founders and job seekers).
+HOME_POSTS = ["startup-marketing-engine-checklist", "tailor-resume-to-job-description", "strategy-frameworks-for-founders"]
 templates.env.globals.update(linkedin_posts=lambda limit=None: linkedin.posts(limit), cfg=config, year=datetime.now().year, me=PROFILE, resume_templates=render.TEMPLATES,
-                             latest_posts=blog.POSTS[:3],
+                             latest_posts=blog.POSTS[:3], featured_posts=blog.featured(HOME_POSTS),
                              services_schema=[
                                  {"@type": "Offer", "price": pr["price"], "priceCurrency": "INR",
                                   "url": f"{config.SITE_URL}/book/{k}" if pr["service"] else f"{config.SITE_URL}/build?product={k}",
@@ -285,6 +287,7 @@ STATIC_PAGES = {
     "/services": "services.html",
     "/colleges": "colleges.html",
     "/free": "free.html",
+    "/free/marketing-scorecard": "scorecard.html",
     "/editorial-policy": "editorial.html",
 }
 
@@ -299,7 +302,7 @@ for _path, _template in STATIC_PAGES.items():
     app.add_api_route(_path, _static_page(_template), methods=["GET"], response_class=HTMLResponse)
 
 
-PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy", "/ai/", "/ai/demo.html"]
+PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/free/marketing-scorecard", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy", "/ai/", "/ai/demo.html"]
 
 
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User",
@@ -345,6 +348,7 @@ def llms_txt():
     lines += ["", "## Free tools",
               f"- [Free age-proof resume check]({u}/free/resume-check): score out of 100 and fixes for experienced professionals",
               f"- [35+ Career Comeback Playbook]({u}/free/playbook): resume and LinkedIn fixes plus 15 Claude prompts",
+              f"- [Free startup marketing scorecard]({u}/free/marketing-scorecard): 10 questions that show which parts of a startup's marketing engine are missing",
               "", "## Key facts",
               "- Resumes use only facts from the customer's own uploaded resumes; nothing is invented.",
               "- Output: editable Word and PDF, four ATS-friendly single-column designs, one page under 5 years of experience, two pages at most otherwise.",

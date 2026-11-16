@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ cfg.SITE_NAME }} | Tailored resumes written for the job you want{% endblock %}</title>
-  <meta name="description" content="{% block description %}Upload your existing resumes and the job description. Get a professionally tailored, ATS-friendly resume in Word and PDF for Rs {{ cfg.PRICE_RUPEES }}.{% endblock %}">
+  <meta name="description" content="{% block description %}Upload your existing resumes and the job description. Get a professionally tailored, ATS-friendly resume in Word and PDF. {% if cfg.FREE_TRIAL %}Your first one is free, then {% endif %}Rs {{ cfg.PRICE_RUPEES }}.{% endblock %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -50,6 +50,7 @@
       <a href="/blog">Career guides</a>
       <a href="/free/resume-check">Free resume check</a>
       <a href="/free/playbook">Free 35+ playbook</a>
+      <a href="/free/marketing-scorecard">Free startup marketing scorecard</a>
       <a href="/book/claude">Learn Claude 1:1</a>
       <a href="/colleges">For colleges</a>
       <a href="/pricing">Pricing</a>
