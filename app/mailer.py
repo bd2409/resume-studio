@@ -27,14 +27,22 @@ def _log(to, subject, result):
         log.exception("Could not log email")
 
 
+def owner_addresses():
+    """OWNER_EMAIL can hold several addresses separated by commas, e.g. hello@bhargabdas.in,me@gmail.com."""
+    return [a.strip() for a in (config.OWNER_EMAIL or "").split(",") if "@" in a and "example.com" not in a]
+
+
 def send(to, subject, html):
+    """`to` is one address or a list of addresses."""
+    to_list = [to] if isinstance(to, str) else list(to)
+    to = ", ".join(to_list)
     if not config.RESEND_API_KEY:
         log.info("Email skipped (no RESEND_API_KEY): %s -> %s", subject, to)
         _log(to, subject, "not sent: RESEND_API_KEY missing")
         return False
     req = urllib.request.Request(
         "https://api.resend.com/emails",
-        data=json.dumps({"from": config.EMAIL_FROM, "to": [to], "subject": subject, "html": html}).encode(),
+        data=json.dumps({"from": config.EMAIL_FROM, "to": to_list, "subject": subject, "html": html}).encode(),
         headers={"Authorization": f"Bearer {config.RESEND_API_KEY}", "Content-Type": "application/json",
                  "User-Agent": "resume-studio/1.0"},
     )
@@ -86,8 +94,9 @@ def booking_confirmed(order):
 
 def owner_alert(subject, lines):
     """A short note to the site owner about work that needs them (bookings, premium reviews, enquiries)."""
-    if not config.OWNER_EMAIL or config.OWNER_EMAIL == "hello@example.com":
+    to = owner_addresses()
+    if not to:
         log.info("Owner alert (no OWNER_EMAIL): %s", subject)
         return
     body = "".join(f"<p>{html.escape(str(line))}</p>" for line in lines)
-    send(config.OWNER_EMAIL, subject, body)
+    send(to, subject, body)

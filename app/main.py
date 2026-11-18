@@ -1159,12 +1159,12 @@ def admin(request: Request):
         o["free"] = (o["rzp_payment_id"] or "").startswith(db.FREE_PREFIX)
     return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts,
                 downloads=db.recent_downloads(100), emails=db.recent_emails(30), email_problem=mailer.status(),
-                owner_email=config.OWNER_EMAIL, sent=request.query_params.get("sent"))
+                owner_email=", ".join(mailer.owner_addresses()), sent=request.query_params.get("sent"))
 
 
 @app.post("/admin/test-email", dependencies=[Depends(admin_auth)])
 def admin_test_email():
-    ok = mailer.send(config.OWNER_EMAIL, f"Test email from {config.SITE_NAME}",
+    ok = mailer.send(mailer.owner_addresses() or [config.CONTACT_EMAIL], f"Test email from {config.SITE_NAME}",
                      "<p>Emails from your site are working. You'll get an alert like this for every new resume and first download.</p>")
     return RedirectResponse(f"/admin?sent={'ok' if ok else 'failed'}", status_code=303)
 
