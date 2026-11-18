@@ -1,8 +1,10 @@
-"""Order emails through Resend. Silently skipped when no API key is set."""
+"""Emails through your own mailbox (SMTP) or Resend. Skipped, and logged, when neither is set up."""
 import html
 import json
 import logging
+import smtplib
 import urllib.error
+from email.message import EmailMessage
 import urllib.request
 
 from . import config
@@ -10,10 +12,17 @@ from . import config
 log = logging.getLogger(__name__)
 
 
+def _use_smtp():
+    return bool(config.SMTP_USER and config.SMTP_PASSWORD)
+
+
 def status():
     """Why emails may not be going out, in plain words. None when everything looks set up."""
+    if _use_smtp():
+        return None
     if not config.RESEND_API_KEY:
-        return "RESEND_API_KEY is not set in Render, so no emails are sent (not to customers, not to you)."
+        return ("No email account is connected, so no emails are sent (not to customers, not to you). In Render, set "
+                "SMTP_USER (e.g. hello@bhargabdas.in) and SMTP_PASSWORD (that mailbox's password).")
     if "example.com" in config.EMAIL_FROM:
         return "EMAIL_FROM is not set in Render. It must use a domain verified in Resend, e.g. Bhargab Das <hello@bhargabdas.in>."
     return None
@@ -27,6 +36,34 @@ def _log(to, subject, result):
         log.exception("Could not log email")
 
 
+def _send_smtp(to_list, subject, body):
+    msg = EmailMessage()
+    msg["From"] = config.EMAIL_FROM
+    msg["To"] = ", ".join(to_list)
+    msg["Subject"] = subject
+    msg.set_content("Please view this email in an email app that shows HTML.")
+    msg.add_alternative(body, subtype="html")
+    try:
+        if config.SMTP_PORT == 465:
+            server = smtplib.SMTP_SSL(config.SMTP_HOST, config.SMTP_PORT, timeout=20)
+        else:
+            server = smtplib.SMTP(config.SMTP_HOST, config.SMTP_PORT, timeout=20)
+            server.ehlo()
+            if server.has_extn("starttls"):
+                server.starttls()
+                server.ehlo()
+        with server:
+            if server.has_extn("auth"):
+                server.login(config.SMTP_USER, config.SMTP_PASSWORD)
+            server.send_message(msg)
+        _log(msg["To"], subject, "sent")
+        return True
+    except Exception as e:
+        log.exception("SMTP email to %s failed", msg["To"])
+        _log(msg["To"], subject, f"failed: {type(e).__name__}: {str(e)[:200]}")
+        return False
+
+
 def owner_addresses():
     """OWNER_EMAIL can hold several addresses separated by commas, e.g. hello@bhargabdas.in,me@gmail.com."""
     return [a.strip() for a in (config.OWNER_EMAIL or "").split(",") if "@" in a and "example.com" not in a]
@@ -36,6 +73,8 @@ def send(to, subject, html):
     """`to` is one address or a list of addresses."""
     to_list = [to] if isinstance(to, str) else list(to)
     to = ", ".join(to_list)
+    if _use_smtp():
+        return _send_smtp(to_list, subject, html)
     if not config.RESEND_API_KEY:
         log.info("Email skipped (no RESEND_API_KEY): %s -> %s", subject, to)
         _log(to, subject, "not sent: RESEND_API_KEY missing")

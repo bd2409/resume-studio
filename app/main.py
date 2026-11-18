@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
 
-from . import ai, auth, blog, config, db, faq, linkedin, mailer, payments, render
+from . import ai, auth, blog, config, db, faq, linkedin, mailer, payments, render, sheet
 from .profile import PROFILE
 from .schemas import Profile, Resume
 
@@ -165,8 +165,11 @@ def owner_alert(order, what):
     lines += [f"{k.replace('_', ' ').capitalize()}: {v}" for k, v in extra_of(order).items() if v]
     if order.get("target_role"):
         lines.append(f"Target role: {order['target_role']}")
-    lines.append(f"{config.SITE_URL}/order/{order['token']}")
+    link = f"{config.SITE_URL}/order/{order['token']}"
+    lines.append(link)
     mailer.owner_alert(f"{what}: {product['label']} - {order['customer_name']}", lines)
+    sheet.append(what, order["customer_name"], order["email"], order["phone"], product["label"],
+                 "Free" if free else f"Rs {order['amount_paise'] // 100}", order.get("target_role") or "", link)
 
 
 def run_generation(order_id, instructions="", part="all"):
@@ -340,6 +343,8 @@ async def count_free_page_views(request: Request, call_next):
             await run_in_threadpool(db.add_visit, path, source)
         except Exception:
             log.exception("Could not count visit")
+        if source not in ("internal",) and not request.cookies.get("rs_src"):
+            response.set_cookie("rs_src", source, max_age=60 * 60 * 24 * 30, samesite="lax")
     return response
 
 
@@ -680,6 +685,19 @@ def _valid_email(email):
     return re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email or "") is not None
 
 
+def _source(request):
+    """Where a visitor first came from (utm_source / utm_medium), remembered in a cookie by the visit counter."""
+    return request.cookies.get("rs_src", "")[:60]
+
+
+def lead_alert(request, kind, name, email, phone, detail=""):
+    """A new free-tool lead: email Bhargab and add a row to his Google Sheet."""
+    src = _source(request)
+    mailer.owner_alert(f"New lead ({kind}): {name}", [f"{kind}: {name} · {email} · {phone or 'no phone'}",
+                                                       detail, f"Came from: {src or 'unknown'}"])
+    sheet.append(f"Lead: {kind}", name, email, phone, detail, "Free", src)
+
+
 def _name_from_email(email):
     """A friendly first name when people skip the name box: "rahul.sharma@x.com" -> "Rahul"."""
     first = re.split(r"[._\-+0-9]", email.split("@")[0])[0]
@@ -706,6 +724,7 @@ async def playbook_signup(request: Request):
     form["name"] = form["name"] or _name_from_email(form["email"])
     if not db.lead_for("playbook", form["email"]):
         db.add_enquiry("playbook", form["name"], form["email"], form["phone"], "", f"Age: {form['age_band'] or 'not given'}")
+        lead_alert(request, "35+ playbook", form["name"], form["email"], form["phone"])
     token = auth.make_cookie(form["email"], form["name"])
     link = f"{config.SITE_URL}/free/playbook?t={urllib.parse.quote(token)}"
     mailer.send(form["email"], f"Your 35+ Career Comeback Playbook - {config.SITE_NAME}",
@@ -760,6 +779,8 @@ async def resume_check_submit(request: Request):
     finally:
         shutil.rmtree(tmp.parent, ignore_errors=True)  # the free check keeps no copy of the resume
     db.add_enquiry("resume-check", form["name"], form["email"], form["phone"], form["target_role"], result.model_dump_json())
+    lead_alert(request, "Resume check", form["name"], form["email"], form["phone"],
+               f"Score {result.score}/100" + (f", aiming for {form['target_role']}" if form["target_role"] else ""))
     link = f"{config.SITE_URL}/free/resume-check?t={token}"
     mailer.send(form["email"], f"Your free resume check: {result.score}/100 - {config.SITE_NAME}",
                 f"<p>Hi {html.escape(form['name'])},</p><p>Your resume scored {result.score}/100. "
@@ -787,6 +808,7 @@ async def enquiry(request: Request):
     mailer.owner_alert(f"College enquiry: {form['org']}",
                        [f"{form['name']} ({form['role']}) · {form['email']} · {form['phone']}", form["org"],
                         f"Students per year: {form['students']}", form["details"]])
+    sheet.append("Lead: college enquiry", form["name"], form["email"], form["phone"], form["org"], "", _source(request))
     return page(request, "colleges.html", sent=True, form={})
 
 

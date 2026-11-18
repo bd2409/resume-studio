@@ -44,6 +44,11 @@ services:
         value: "false"
       - key: RESEND_API_KEY
         sync: false
+      # Or send through your own mailbox instead of Resend (GoDaddy email defaults: smtpout.secureserver.net:465).
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
       # Set in the Render dashboard (must use a domain verified in Resend). sync: false stops
       # blueprint syncs from overwriting the value set there.
       - key: EMAIL_FROM
