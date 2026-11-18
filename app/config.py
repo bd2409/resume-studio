@@ -68,6 +68,8 @@ PRICE_AUDIT = int(os.getenv("PRICE_AUDIT", "7999"))
 PRICE_CLAUDE = int(os.getenv("PRICE_CLAUDE", "2499"))
 # Free AI resume checks per day (the lead magnet), to cap AI spend.
 FREE_CHECKS_PER_DAY = int(os.getenv("FREE_CHECKS_PER_DAY", "40"))
+# Claude connector (/mcp): free resume checks per day across everyone, to cap AI spend.
+MCP_CHECKS_PER_DAY = int(os.getenv("MCP_CHECKS_PER_DAY", "100"))
 # false (default): the free playbook opens straight away and the email box is optional. true: email first.
 PLAYBOOK_GATE = os.getenv("PLAYBOOK_GATE", "false").strip().lower() in ("1", "true", "yes")
 # One free resume + cover letter per person (same email, phone, Google account or browser), then they pay.

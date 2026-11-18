@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
 
-from . import ai, auth, blog, config, db, faq, linkedin, mailer, payments, render
+from . import ai, auth, blog, config, db, faq, linkedin, mailer, mcp, payments, render
 from .profile import PROFILE
 from .schemas import Profile, Resume
 
@@ -32,6 +32,7 @@ ALLOWED_EXT = {".pdf", ".docx", ".doc", ".rtf", ".odt", ".txt"}
 
 app = FastAPI(title=config.SITE_NAME, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
+app.include_router(mcp.router)  # Claude connector at /mcp
 
 
 @app.get("/ai", include_in_schema=False)
@@ -289,6 +290,7 @@ STATIC_PAGES = {
     "/free": "free.html",
     "/free/marketing-scorecard": "scorecard.html",
     "/editorial-policy": "editorial.html",
+    "/claude": "claude_connector.html",
 }
 
 
@@ -340,7 +342,7 @@ async def count_free_page_views(request: Request, call_next):
     return response
 
 
-PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/free/marketing-scorecard", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy", "/ai/", "/ai/demo.html"]
+PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/free/marketing-scorecard", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy", "/claude", "/ai/", "/ai/demo.html"]
 
 
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User",
@@ -520,8 +522,9 @@ def healthz():
 # ------------------------------------------------------------------ order flow
 
 @app.get("/build", response_class=HTMLResponse)
-def build_form(request: Request):
-    return page(request, "build.html", error=None, form={})
+def build_form(request: Request, target_role: str = ""):
+    # target_role can be pre-filled by links from the Claude connector.
+    return page(request, "build.html", error=None, form={"target_role": target_role.strip()[:120]})
 
 
 @app.post("/build", response_class=HTMLResponse)
