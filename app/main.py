@@ -785,11 +785,41 @@ def _quiz_result(kind, value, vis):
 
 
 @app.get("/free/hidden-gem", response_class=HTMLResponse)
-def hidden_gem(request: Request, about: str = ""):
-    """The quiz. With ?about=<token> a friend answers the same statements about the person who shared the link."""
+def hidden_gem(request: Request, about: str = "", ref: str = ""):
+    """The quiz. With ?about=<token> a friend answers the same statements about the person who shared the link.
+    ?ref=<token> marks a visitor who came from someone's colleague link and is now taking the quiz themselves."""
     subject = db.quiz_take(about) if about else None
+    if subject and not BOT_UA.search(request.headers.get("user-agent", "")) \
+            and f"o{about}" not in request.cookies.get("rs_qopen", ""):
+        db.quiz_link_opened(about)
+        _quiz_event("Quiz: colleague opened link", subject, f"Opened {subject['link_opens'] + 1}x so far")
+        resp = page(request, "quiz.html", subject=subject, subject_name=_first_name(subject["name"]),
+                    questions=quiz.QUESTIONS, choices=quiz.CHOICES, types=quiz.TYPES, og_type=None, ref="")
+        resp.set_cookie("rs_qopen", (request.cookies.get("rs_qopen", "") + f"o{about}")[-400:],
+                        max_age=60 * 60 * 24 * 90, samesite="lax")
+        return resp
     return page(request, "quiz.html", subject=subject, subject_name=_first_name(subject["name"]) if subject else "",
-                questions=quiz.QUESTIONS, choices=quiz.CHOICES, types=quiz.TYPES, og_type=None)
+                questions=quiz.QUESTIONS, choices=quiz.CHOICES, types=quiz.TYPES, og_type=None,
+                ref=ref if ref and db.quiz_take(ref) else "")
+
+
+def _quiz_event(event, take, detail):
+    """A Google Sheet row about one quiz taker's colleague link. Never includes anyone's answers."""
+    who = take["name"] or "Anonymous quiz taker"
+    sheet.append(event, who, take["email"], "", f"{detail} · taker #{take['token'][:6]}", "Free", take["source"],
+                 f"{config.SITE_URL}/free/hidden-gem/me/{take['token']}")
+
+
+@app.post("/free/hidden-gem/shared/{token}")
+async def hidden_gem_shared_link(request: Request, token: str):
+    """The quiz taker tapped Copy link or Send on WhatsApp for their colleague link."""
+    take = db.quiz_take(token)
+    method = "whatsapp" if (await request.json()).get("method") == "whatsapp" else "copy"
+    if take:
+        n = db.quiz_shared(token, method)
+        if n == 1:  # one row per method, so repeated taps don't flood the sheet
+            _quiz_event("Quiz: link shared", take, "via WhatsApp" if method == "whatsapp" else "copied link")
+    return JSONResponse({"ok": True})
 
 
 @app.post("/free/hidden-gem/take")
@@ -799,7 +829,13 @@ async def hidden_gem_take(request: Request):
     if not quiz.valid(answers):
         return JSONResponse({"ok": False, "error": "Please answer all 12 questions."}, status_code=400)
     value, vis, kind = quiz.score(answers)
-    token = db.add_quiz_take(name, answers, kind, value, vis, _source(request))
+    referrer = db.quiz_take((data.get("ref") or "")[:40]) if data.get("ref") else None
+    token = db.add_quiz_take(name, answers, kind, value, vis, "colleague link" if referrer else _source(request),
+                             referrer["token"] if referrer else "")
+    if referrer:
+        _quiz_event("Quiz: referred visitor took quiz", referrer,
+                    f"{name or 'Someone'} took the quiz after answering about {_first_name(referrer['name']) or 'this person'}, "
+                    f"got {quiz.TYPES[kind]['name']}")
     return JSONResponse({"ok": True, "token": token, "result": _quiz_result(kind, value, vis),
                          "friend_link": f"{config.SITE_URL}/free/hidden-gem?about={token}",
                          "my_link": f"{config.SITE_URL}/free/hidden-gem/me/{token}",
@@ -822,8 +858,7 @@ async def hidden_gem_friend(request: Request, token: str):
                     f"<p>{html.escape(friend or 'Someone')} answered 12 questions about you. That's {count} so far.</p>"
                     f"<p>See where you and they agree, and your blind spots: <a href=\"{link}\">{link}</a></p>"
                     f"<p>{config.OWNER_NAME}</p>")
-        sheet.append("Quiz: friend answered", take["name"], take["email"], "", f"{friend or 'Anonymous'} (friend #{count})",
-                     "Free", take["source"], link)
+    _quiz_event("Quiz: colleague answered", take, f"{friend or 'Anonymous colleague'} (answer #{count})")
     return JSONResponse({"ok": True, "result": _quiz_result(kind, value, vis)})
 
 
@@ -1321,11 +1356,12 @@ def admin(request: Request):
         e["score"] = json.loads(e["details"]).get("score") if e["details"].startswith("{") else None
     visits, lead_counts = db.visit_summary(30)
     quiz_stats = db.quiz_stats(30)
+    quiz_rows = db.quiz_tracking(200)
     counts = db.download_counts()
     for o in orders:
         o["downloads"], o["last_download"] = counts.get(o["id"], (0, ""))
         o["free"] = (o["rzp_payment_id"] or "").startswith(db.FREE_PREFIX)
-    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts, quiz_stats=quiz_stats, quiz_types=quiz.TYPES,
+    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts, quiz_stats=quiz_stats, quiz_types=quiz.TYPES, quiz_rows=quiz_rows,
                 downloads=db.recent_downloads(100), emails=db.recent_emails(30), email_problem=mailer.status(),
                 owner_email=", ".join(mailer.owner_addresses()), sent=request.query_params.get("sent"))
 

@@ -120,6 +120,11 @@ def init():
                          ("source", "TEXT NOT NULL DEFAULT ''")):
             if col not in cols:
                 c.execute(f"ALTER TABLE orders ADD COLUMN {col} {ddl}")
+        qcols = {r["name"] for r in c.execute("PRAGMA table_info(quiz_takes)")}
+        for col, ddl in (("shared_copy", "INTEGER NOT NULL DEFAULT 0"), ("shared_whatsapp", "INTEGER NOT NULL DEFAULT 0"),
+                         ("link_opens", "INTEGER NOT NULL DEFAULT 0"), ("referred_by", "TEXT NOT NULL DEFAULT ''")):
+            if col not in qcols:
+                c.execute(f"ALTER TABLE quiz_takes ADD COLUMN {col} {ddl}")
 
 
 def create_order(customer_name, email, phone, job_description, files, amount_paise):
@@ -320,12 +325,40 @@ def recent_emails(limit=30):
 
 # ------------------------------------------------------------------ Hidden Gem quiz
 
-def add_quiz_take(name, answers, result, value_pct, vis_pct, source):
+def add_quiz_take(name, answers, result, value_pct, vis_pct, source, referred_by=""):
     token = secrets.token_urlsafe(9)
     with conn() as c:
-        c.execute("INSERT INTO quiz_takes (token, created_at, name, answers, result, value_pct, vis_pct, source) "
-                  "VALUES (?,?,?,?,?,?,?,?)", (token, now(), name, json.dumps(answers), result, value_pct, vis_pct, source))
+        c.execute("INSERT INTO quiz_takes (token, created_at, name, answers, result, value_pct, vis_pct, source, referred_by) "
+                  "VALUES (?,?,?,?,?,?,?,?,?)",
+                  (token, now(), name, json.dumps(answers), result, value_pct, vis_pct, source, referred_by))
     return token
+
+
+def quiz_shared(token, method):
+    """Counts a click on Copy link / Send on WhatsApp for the colleague link. Returns the new count for that method."""
+    col = "shared_whatsapp" if method == "whatsapp" else "shared_copy"
+    with conn() as c:
+        c.execute(f"UPDATE quiz_takes SET {col} = {col} + 1 WHERE token = ?", (token,))
+        row = c.execute(f"SELECT {col} FROM quiz_takes WHERE token = ?", (token,)).fetchone()
+    return row[0] if row else 0
+
+
+def quiz_link_opened(token):
+    with conn() as c:
+        c.execute("UPDATE quiz_takes SET link_opens = link_opens + 1 WHERE token = ?", (token,))
+
+
+def quiz_tracking(limit=200):
+    """One row per quiz taker: did they share their colleague link, how, opens, answers, and people they brought in."""
+    with conn() as c:
+        rows = c.execute(
+            "SELECT t.token, t.created_at, t.name, t.email, t.result, t.source, t.shared_copy, t.shared_whatsapp, "
+            "t.link_opens, t.referred_by, r.name AS referred_by_name, "
+            "(SELECT COUNT(*) FROM quiz_friends f WHERE f.token = t.token) AS answers, "
+            "(SELECT COUNT(*) FROM quiz_takes x WHERE x.referred_by = t.token) AS referred "
+            "FROM quiz_takes t LEFT JOIN quiz_takes r ON r.token = t.referred_by "
+            "ORDER BY t.created_at DESC LIMIT ?", (limit,)).fetchall()
+    return [dict(r) for r in rows]
 
 
 def quiz_take(token):
@@ -365,4 +398,7 @@ def quiz_stats(days=30):
             "SELECT result, COUNT(*) FROM quiz_takes WHERE created_at >= ? GROUP BY result", (since,))}
         emails = c.execute("SELECT COUNT(*) FROM quiz_takes WHERE created_at >= ? AND email != ''", (since,)).fetchone()[0]
         friends = c.execute("SELECT COUNT(*) FROM quiz_friends WHERE created_at >= ?", (since,)).fetchone()[0]
-    return {"by_type": by_type, "total": sum(by_type.values()), "emails": emails, "friends": friends}
+        t = c.execute("SELECT COALESCE(SUM(shared_copy + shared_whatsapp > 0), 0), COALESCE(SUM(link_opens), 0), "
+                      "COALESCE(SUM(referred_by != ''), 0) FROM quiz_takes WHERE created_at >= ?", (since,)).fetchone()
+    return {"by_type": by_type, "total": sum(by_type.values()), "emails": emails, "friends": friends,
+            "sharers": t[0], "opens": t[1], "referred": t[2]}
