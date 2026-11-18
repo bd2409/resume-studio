@@ -97,7 +97,8 @@ def init():
         for col, ddl in (("template", "TEXT NOT NULL DEFAULT 'classic'"), ("target_role", "TEXT NOT NULL DEFAULT ''"),
                          ("cover_json", "TEXT"), ("user_email", "TEXT"),
                          ("product", "TEXT NOT NULL DEFAULT 'resume'"), ("parent_id", "TEXT"), ("linkedin_json", "TEXT"),
-                         ("pack_json", "TEXT"), ("extra_json", "TEXT"), ("device_id", "TEXT")):
+                         ("pack_json", "TEXT"), ("extra_json", "TEXT"), ("device_id", "TEXT"),
+                         ("source", "TEXT NOT NULL DEFAULT ''")):
             if col not in cols:
                 c.execute(f"ALTER TABLE orders ADD COLUMN {col} {ddl}")
 
