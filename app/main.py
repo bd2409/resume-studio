@@ -159,7 +159,8 @@ def extra_of(order):
 
 def owner_alert(order, what):
     product = product_of(order)
-    lines = [f"{what}: {product['label']} (Rs {order['amount_paise'] // 100})",
+    free = (order.get("rzp_payment_id") or "").startswith(db.FREE_PREFIX)
+    lines = [f"{what}: {product['label']} ({'FREE first resume' if free else 'Rs ' + str(order['amount_paise'] // 100)})",
              f"{order['customer_name']} · {order['email']} · {order['phone']}"]
     lines += [f"{k.replace('_', ' ').capitalize()}: {v}" for k, v in extra_of(order).items() if v]
     if order.get("target_role"):
@@ -232,9 +233,11 @@ def run_generation(order_id, instructions="", part="all"):
             db.update(order_id, resume_json=resume.model_dump_json(), notes_json=json.dumps(notes))
         db.update(order_id, status="ready", progress="")
         if first_time:
-            mailer.order_ready(db.get_by_id(order_id))
-            if product["human"]:
-                owner_alert(db.get_by_id(order_id), "Premium order to review")
+            done = db.get_by_id(order_id)
+            mailer.order_ready(done)
+            # Tell Bhargab about every new order, so he knows who used the service even if they never download.
+            owner_alert(done, "Premium order to review" if product["human"] else
+                        "New free resume" if (done["rzp_payment_id"] or "").startswith(db.FREE_PREFIX) else "New paid order")
     except Exception as exc:
         log.exception("Generation failed for %s", order_id)
         db.update(order_id, status="failed", progress="", error=str(exc)[:500])
@@ -514,6 +517,7 @@ def healthz():
     return {"ok": True, "ai_connected": config.AI_MODE == "live", "cashfree_keys_set": payments.enabled(),
             "cashfree_mode": payments.mode(), "checkout_for_everyone": payments.enabled() and config.AI_MODE == "live"
             and payments.mode() == "production",
+            "emails": mailer.status() or "set up", "owner_alerts_to": "set" if config.OWNER_EMAIL else "not set",
             "linkedin_posts_embedded": f"{sum(1 for p in linkedin.posts() if p['embed'])} of {len(linkedin.POSTS)}"}
 
 
@@ -1086,9 +1090,21 @@ def regenerate(token: str, background: BackgroundTasks, instructions: str = Form
     return RedirectResponse(f"/order/{token}" + ("" if part == "resume" else "/" + part), status_code=303)
 
 
+def _track_download(order, kind, inline):
+    """Logs every download; the order's first one also emails Bhargab who downloaded what."""
+    if inline:
+        return  # a preview in the browser, not a download
+    try:
+        if db.add_download(order["id"], kind):
+            threading.Thread(target=owner_alert, args=(order, f"Downloaded ({kind})"), daemon=True).start()
+    except Exception:
+        log.exception("Could not record download")
+
+
 @app.get("/order/{token}/download/{kind}")
 def download(token: str, kind: str, inline: int = 0):
     order = load_order(token)
+    _track_download(order, kind, inline)
     docx_path, pdf_path = output_paths(order)
     cover_docx, cover_pdf = cover_paths(order)
     if kind == "pack-docx" and order["pack_json"]:
@@ -1137,7 +1153,20 @@ def admin(request: Request):
     for e in leads:
         e["score"] = json.loads(e["details"]).get("score") if e["details"].startswith("{") else None
     visits, lead_counts = db.visit_summary(30)
-    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts)
+    counts = db.download_counts()
+    for o in orders:
+        o["downloads"], o["last_download"] = counts.get(o["id"], (0, ""))
+        o["free"] = (o["rzp_payment_id"] or "").startswith(db.FREE_PREFIX)
+    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts,
+                downloads=db.recent_downloads(100), emails=db.recent_emails(30), email_problem=mailer.status(),
+                owner_email=config.OWNER_EMAIL, sent=request.query_params.get("sent"))
+
+
+@app.post("/admin/test-email", dependencies=[Depends(admin_auth)])
+def admin_test_email():
+    ok = mailer.send(config.OWNER_EMAIL, f"Test email from {config.SITE_NAME}",
+                     "<p>Emails from your site are working. You'll get an alert like this for every new resume and first download.</p>")
+    return RedirectResponse(f"/admin?sent={'ok' if ok else 'failed'}", status_code=303)
 
 
 @app.get("/admin/leads.csv", dependencies=[Depends(admin_auth)])

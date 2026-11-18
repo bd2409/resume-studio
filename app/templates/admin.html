@@ -3,11 +3,34 @@
 {% block title %}Orders | {{ cfg.SITE_NAME }}{% endblock %}
 {% block content %}
 <div class="wrap" style="padding:30px 20px 60px;overflow-x:auto">
-  <h1 style="color:var(--navy-dark)">Orders</h1>
+  {% if email_problem %}
+  <div class="alert err"><strong>Emails are not going out.</strong> {{ email_problem }} Customers don't get their "resume ready" email and you don't get alerts until this is fixed.</div>
+  {% endif %}
+  {% if sent == 'ok' %}<div class="alert ok">Test email sent to {{ owner_email }}. Check your inbox (and spam).</div>
+  {% elif sent == 'failed' %}<div class="alert err">The test email failed. See the email log at the bottom of this page for the reason.</div>{% endif %}
+  <form method="post" action="/admin/test-email" style="margin:0 0 18px">
+    <button class="btn small light" type="submit">Send a test email to {{ owner_email or 'OWNER_EMAIL (not set)' }}</button>
+  </form>
+
+  <h2 style="color:var(--navy-dark)">Recent downloads</h2>
+  <p>Every Word or PDF download, newest first. You also get an email the first time each person downloads.</p>
+  {% if downloads %}
+  <table class="admin">
+    <tr><th>When (UTC)</th><th>Name</th><th>Email</th><th>Phone</th><th>File</th><th>Free or paid</th><th></th></tr>
+    {% for d in downloads %}
+    <tr><td>{{ d.at[:16].replace('T', ' ') }}</td><td>{{ d.customer_name }}</td><td><a href="mailto:{{ d.email }}">{{ d.email }}</a></td>
+      <td>{% if d.phone %}<a href="https://wa.me/{{ d.phone | replace('+', '') | replace(' ', '') }}" target="_blank">{{ d.phone }}</a>{% endif %}</td>
+      <td>{{ d.kind }}</td><td>{% if (d.rzp_payment_id or '').startswith('free_') %}Free{% else %}Rs {{ (d.amount_paise / 100) | int }}{% endif %}</td>
+      <td><a href="/order/{{ d.token }}" target="_blank">Open</a></td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p>No downloads recorded yet (tracking starts with this update).</p>{% endif %}
+
+  <h1 style="color:var(--navy-dark);margin-top:40px">Orders</h1>
   {% set paid = orders | selectattr('rzp_payment_id') | list %}
   <p>{{ orders | length }} orders shown, {{ paid | length }} paid.</p>
   <table class="admin">
-    <tr><th>Created (UTC)</th><th>Customer</th><th>Email</th><th>Phone</th><th>Product</th><th>Status</th><th>Amount</th><th>Payment ID</th><th>Regens</th><th>Error</th><th></th></tr>
+    <tr><th>Created (UTC)</th><th>Customer</th><th>Email</th><th>Phone</th><th>Product</th><th>Status</th><th>Amount</th><th>Payment ID</th><th>Regens</th><th>Downloads</th><th>Error</th><th></th></tr>
     {% for o in orders %}
     <tr>
       <td>{{ o.created_at[:16].replace('T', ' ') }}</td>
@@ -16,9 +39,10 @@
       <td>{{ o.phone }}</td>
       <td>{{ o.label }}{% if o.target_role %}<br><small>{{ o.target_role }}</small>{% endif %}{% for k, v in o.extra.items() if v %}<br><small><b>{{ k.replace('_', ' ') }}:</b> {{ v | truncate(160) }}</small>{% endfor %}</td>
       <td>{{ o.status }}</td>
-      <td>Rs {{ (o.amount_paise / 100) | int }}</td>
+      <td>{% if o.free %}Free{% else %}Rs {{ (o.amount_paise / 100) | int }}{% endif %}</td>
       <td>{{ o.rzp_payment_id or '' }}</td>
       <td>{{ o.regenerations }}</td>
+      <td>{{ o.downloads }}{% if o.last_download %}<br><small>{{ o.last_download[:16].replace('T', ' ') }}</small>{% endif %}</td>
       <td style="color:var(--err);max-width:220px">{{ o.error }}</td>
       <td><a href="/order/{{ o.token }}" target="_blank">Open</a></td>
     </tr>
@@ -45,5 +69,14 @@
     {% endfor %}
   </table>
   {% else %}<p>No enquiries yet.</p>{% endif %}
+
+  <h2 style="color:var(--navy-dark);margin-top:40px">Email log</h2>
+  <p>The last 30 emails the site tried to send, and whether they went out.</p>
+  {% if emails %}
+  <table class="admin">
+    <tr><th>When (UTC)</th><th>To</th><th>Subject</th><th>Result</th></tr>
+    {% for m in emails %}<tr><td>{{ m.at[:16].replace('T', ' ') }}</td><td>{{ m.to_addr }}</td><td>{{ m.subject }}</td><td style="max-width:320px">{{ m.status }}</td></tr>{% endfor %}
+  </table>
+  {% else %}<p>No emails tried yet.</p>{% endif %}
 </div>
 {% endblock %}

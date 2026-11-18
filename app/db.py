@@ -51,6 +51,20 @@ CREATE TABLE IF NOT EXISTS enquiries (
     org         TEXT NOT NULL DEFAULT '',
     details     TEXT NOT NULL DEFAULT ''
 );
+CREATE TABLE IF NOT EXISTS downloads (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    at        TEXT NOT NULL,
+    order_id  TEXT NOT NULL,
+    kind      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS downloads_order ON downloads (order_id);
+CREATE TABLE IF NOT EXISTS email_log (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    at       TEXT NOT NULL,
+    to_addr  TEXT NOT NULL,
+    subject  TEXT NOT NULL,
+    status   TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS visits (
     day     TEXT NOT NULL,
     path    TEXT NOT NULL,
@@ -249,3 +263,36 @@ def visit_summary(days=30):
         leads = {r["kind"]: r["n"] for r in c.execute(
             "SELECT kind, COUNT(*) AS n FROM enquiries WHERE created_at >= ? GROUP BY kind", (since,))}
     return [dict(r) for r in rows], leads
+
+
+def add_download(order_id, kind):
+    """Records a file download. Returns True when it's the order's first download (so the owner is told once)."""
+    with conn() as c:
+        first = c.execute("SELECT COUNT(*) FROM downloads WHERE order_id = ?", (order_id,)).fetchone()[0] == 0
+        c.execute("INSERT INTO downloads (at, order_id, kind) VALUES (?,?,?)", (now(), order_id, kind))
+    return first
+
+
+def recent_downloads(limit=200):
+    with conn() as c:
+        rows = c.execute(
+            "SELECT d.at, d.kind, o.customer_name, o.email, o.phone, o.product, o.amount_paise, o.rzp_payment_id, o.token "
+            "FROM downloads d JOIN orders o ON o.id = d.order_id ORDER BY d.id DESC LIMIT ?", (limit,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def download_counts():
+    with conn() as c:
+        return {r[0]: (r[1], r[2]) for r in c.execute(
+            "SELECT order_id, COUNT(*), MAX(at) FROM downloads GROUP BY order_id")}
+
+
+def log_email(to_addr, subject, status):
+    with conn() as c:
+        c.execute("INSERT INTO email_log (at, to_addr, subject, status) VALUES (?,?,?,?)",
+                  (now(), to_addr, subject[:200], status[:300]))
+
+
+def recent_emails(limit=30):
+    with conn() as c:
+        return [dict(r) for r in c.execute("SELECT * FROM email_log ORDER BY id DESC LIMIT ?", (limit,))]

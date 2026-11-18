@@ -2,6 +2,7 @@
 import html
 import json
 import logging
+import urllib.error
 import urllib.request
 
 from . import config
@@ -9,19 +10,46 @@ from . import config
 log = logging.getLogger(__name__)
 
 
+def status():
+    """Why emails may not be going out, in plain words. None when everything looks set up."""
+    if not config.RESEND_API_KEY:
+        return "RESEND_API_KEY is not set in Render, so no emails are sent (not to customers, not to you)."
+    if "example.com" in config.EMAIL_FROM:
+        return "EMAIL_FROM is not set in Render. It must use a domain verified in Resend, e.g. Bhargab Das <hello@bhargabdas.in>."
+    return None
+
+
+def _log(to, subject, result):
+    try:
+        from . import db
+        db.log_email(to, subject, result)
+    except Exception:
+        log.exception("Could not log email")
+
+
 def send(to, subject, html):
     if not config.RESEND_API_KEY:
         log.info("Email skipped (no RESEND_API_KEY): %s -> %s", subject, to)
-        return
+        _log(to, subject, "not sent: RESEND_API_KEY missing")
+        return False
     req = urllib.request.Request(
         "https://api.resend.com/emails",
         data=json.dumps({"from": config.EMAIL_FROM, "to": [to], "subject": subject, "html": html}).encode(),
-        headers={"Authorization": f"Bearer {config.RESEND_API_KEY}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {config.RESEND_API_KEY}", "Content-Type": "application/json",
+                 "User-Agent": "resume-studio/1.0"},
     )
     try:
         urllib.request.urlopen(req, timeout=20).read()
-    except Exception:
+        _log(to, subject, "sent")
+        return True
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode(errors="replace")[:250]
+        log.error("Email to %s failed: %s %s", to, e.code, detail)
+        _log(to, subject, f"failed: {e.code} {detail}")
+    except Exception as e:
         log.exception("Email to %s failed", to)
+        _log(to, subject, f"failed: {e}")
+    return False
 
 
 def order_ready(order):
