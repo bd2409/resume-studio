@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
 
-from . import ai, auth, blog, config, db, faq, linkedin, mailer, payments, render, sheet
+from . import ai, auth, blog, config, db, faq, linkedin, mailer, payments, quiz, render, sheet
 from .profile import PROFILE
 from .schemas import Profile, Resume
 
@@ -319,18 +319,22 @@ for _path, _template in STATIC_PAGES.items():
 
 
 # Short, clean links for LinkedIn DMs: bhargabdas.in/check reads better than a long /free/...?utm_... link.
-SHORT_LINKS = {"/check": "/free/resume-check", "/playbook": "/free/playbook", "/scorecard": "/free/marketing-scorecard"}
+SHORT_LINKS = {"/check": "/free/resume-check", "/playbook": "/free/playbook", "/scorecard": "/free/marketing-scorecard",
+               "/quiz": "/free/hidden-gem"}
+# /quiz is shared in public LinkedIn posts rather than DMs, so it is tagged as a post by default.
+SHORT_LINK_SOURCE = {"/quiz": "utm_source=linkedin&utm_medium=post"}
 
 
-def _short_link(target):
+def _short_link(target, default="utm_source=linkedin&utm_medium=dm"):
     def handler(request: Request):
-        query = str(request.url.query) or "utm_source=linkedin&utm_medium=dm"
+        query = str(request.url.query) or default
         return RedirectResponse(f"{target}?{query}", status_code=302)
     return handler
 
 
 for _path, _target in SHORT_LINKS.items():
-    app.add_api_route(_path, _short_link(_target), methods=["GET"], include_in_schema=False)
+    app.add_api_route(_path, _short_link(_target, SHORT_LINK_SOURCE.get(_path, "utm_source=linkedin&utm_medium=dm")),
+                      methods=["GET"], include_in_schema=False)
 
 BOT_UA = re.compile(r"bot|crawl|spider|preview|slurp|facebookexternalhit|whatsapp|embedly|headless", re.I)
 
@@ -358,7 +362,7 @@ async def count_free_page_views(request: Request, call_next):
     return response
 
 
-PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/free/marketing-scorecard", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy", "/ai/", "/ai/demo.html"]
+PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/free/marketing-scorecard", "/free/hidden-gem", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy", "/ai/", "/ai/demo.html"]
 
 
 AI_CRAWLERS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User",
@@ -768,6 +772,110 @@ async def scorecard_signup(request: Request):
                 f"<p>Want help? Book a free 30-minute call: <a href=\"{config.SITE_URL}/#contact\">{config.SITE_URL}/#contact</a></p>"
                 f"<p>{config.OWNER_NAME}</p>")
     return JSONResponse({"ok": True})
+
+
+# ------------------------------------------------------------------ The Hidden Gem Test (free quiz, bhargabdas.in/quiz)
+
+def _first_name(name):
+    return (name or "").strip().split(" ")[0][:30]
+
+
+def _quiz_result(kind, value, vis):
+    return {"key": kind, "value": value, "visibility": vis, **quiz.TYPES[kind]}
+
+
+@app.get("/free/hidden-gem", response_class=HTMLResponse)
+def hidden_gem(request: Request, about: str = ""):
+    """The quiz. With ?about=<token> a friend answers the same statements about the person who shared the link."""
+    subject = db.quiz_take(about) if about else None
+    return page(request, "quiz.html", subject=subject, subject_name=_first_name(subject["name"]) if subject else "",
+                questions=quiz.QUESTIONS, choices=quiz.CHOICES, types=quiz.TYPES, og_type=None)
+
+
+@app.post("/free/hidden-gem/take")
+async def hidden_gem_take(request: Request):
+    data = await request.json()
+    answers, name = data.get("answers"), (data.get("name") or "").strip()[:60]
+    if not quiz.valid(answers):
+        return JSONResponse({"ok": False, "error": "Please answer all 12 questions."}, status_code=400)
+    value, vis, kind = quiz.score(answers)
+    token = db.add_quiz_take(name, answers, kind, value, vis, _source(request))
+    return JSONResponse({"ok": True, "token": token, "result": _quiz_result(kind, value, vis),
+                         "friend_link": f"{config.SITE_URL}/free/hidden-gem?about={token}",
+                         "my_link": f"{config.SITE_URL}/free/hidden-gem/me/{token}",
+                         "share_link": f"{config.SITE_URL}/free/hidden-gem/r/{kind}"})
+
+
+@app.post("/free/hidden-gem/friend/{token}")
+async def hidden_gem_friend(request: Request, token: str):
+    take = db.quiz_take(token)
+    data = await request.json()
+    answers, friend = data.get("answers"), (data.get("name") or "").strip()[:60]
+    if not take or not quiz.valid(answers):
+        return JSONResponse({"ok": False, "error": "Please answer all 12 questions."}, status_code=400)
+    count = db.add_quiz_friend(token, friend, answers)
+    value, vis, kind = quiz.score(answers)
+    if take["email"]:
+        link = f"{config.SITE_URL}/free/hidden-gem/me/{token}"
+        mailer.send(take["email"], f"{friend or 'A friend'} just answered your Hidden Gem Test",
+                    f"<p>Hi {html.escape(_first_name(take['name']) or 'there')},</p>"
+                    f"<p>{html.escape(friend or 'Someone')} answered 12 questions about you. That's {count} so far.</p>"
+                    f"<p>See where you and they agree, and your blind spots: <a href=\"{link}\">{link}</a></p>"
+                    f"<p>{config.OWNER_NAME}</p>")
+        sheet.append("Quiz: friend answered", take["name"], take["email"], "", f"{friend or 'Anonymous'} (friend #{count})",
+                     "Free", take["source"], link)
+    return JSONResponse({"ok": True, "result": _quiz_result(kind, value, vis)})
+
+
+@app.post("/free/hidden-gem/email/{token}")
+async def hidden_gem_email(request: Request, token: str):
+    """Optional, after the result is shown: email me my report and tell me when friends answer. This is the lead."""
+    take = db.quiz_take(token)
+    f = await request.form()
+    email, name, phone = (f.get("email") or "").strip()[:200], (f.get("name") or "").strip()[:60], (f.get("phone") or "").strip()[:30]
+    if not take or not _valid_email(email):
+        return JSONResponse({"ok": False, "error": "Please enter a valid email."}, status_code=400)
+    name = name or take["name"] or _name_from_email(email)
+    db.set_quiz_contact(token, name, email)
+    t = quiz.TYPES[take["result"]]
+    detail = f"{t['name']} · Value {take['value_pct']}% · Visibility {take['vis_pct']}%"
+    if not db.lead_for("quiz", email):
+        db.add_enquiry("quiz", name, email, phone, "", detail)
+        lead_alert(request, "Hidden Gem quiz", name, email, phone, detail)
+    link = f"{config.SITE_URL}/free/hidden-gem/me/{token}"
+    steps = "".join(f"<li>{html.escape(x)}</li>" for x in t["next"])
+    mailer.send(email, f"You're {t['name']} {t['emoji']} - your Hidden Gem Test result",
+                f"<p>Hi {html.escape(_first_name(name))},</p><p><strong>{t['emoji']} {t['name']}</strong>: {html.escape(t['tag'])}</p>"
+                f"<p>Value: {take['value_pct']}% · Visibility: {take['vis_pct']}%</p><p>{html.escape(t['about'])}</p>"
+                f"<p>Do this next:</p><ul>{steps}</ul>"
+                f"<p>Your private results page (send the friend link there to 2 or 3 colleagues to find your blind spots): "
+                f"<a href=\"{link}\">{link}</a></p><p>{config.OWNER_NAME}</p>")
+    return JSONResponse({"ok": True})
+
+
+@app.get("/free/hidden-gem/me/{token}", response_class=HTMLResponse)
+def hidden_gem_me(request: Request, token: str):
+    take = db.quiz_take(token)
+    if not take:
+        return RedirectResponse("/free/hidden-gem", status_code=302)
+    friends = db.quiz_friends(token)
+    johari = quiz.compare(take["answers"], [f["answers"] for f in friends]) if friends else None
+    if friends:
+        fv = round(sum(quiz.score(f["answers"])[0] for f in friends) / len(friends))
+        fs = round(sum(quiz.score(f["answers"])[1] for f in friends) / len(friends))
+    else:
+        fv = fs = None
+    return page(request, "quiz_me.html", take=take, result=_quiz_result(take["result"], take["value_pct"], take["vis_pct"]),
+                friends=friends, johari=johari, friend_value=fv, friend_vis=fs, types=quiz.TYPES,
+                friend_link=f"{config.SITE_URL}/free/hidden-gem?about={token}")
+
+
+@app.get("/free/hidden-gem/r/{kind}", response_class=HTMLResponse)
+def hidden_gem_shared(request: Request, kind: str):
+    """What people see when someone shares their result: that type's card and image, and a button to take the test."""
+    if kind not in quiz.TYPES:
+        return RedirectResponse("/free/hidden-gem", status_code=302)
+    return page(request, "quiz_type.html", t=quiz.TYPES[kind], kind=kind, types=quiz.TYPES, og_type=kind)
 
 
 @app.get("/free/resume-check", response_class=HTMLResponse)
@@ -1212,11 +1320,12 @@ def admin(request: Request):
     for e in leads:
         e["score"] = json.loads(e["details"]).get("score") if e["details"].startswith("{") else None
     visits, lead_counts = db.visit_summary(30)
+    quiz_stats = db.quiz_stats(30)
     counts = db.download_counts()
     for o in orders:
         o["downloads"], o["last_download"] = counts.get(o["id"], (0, ""))
         o["free"] = (o["rzp_payment_id"] or "").startswith(db.FREE_PREFIX)
-    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts,
+    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts, quiz_stats=quiz_stats, quiz_types=quiz.TYPES,
                 downloads=db.recent_downloads(100), emails=db.recent_emails(30), email_problem=mailer.status(),
                 owner_email=", ".join(mailer.owner_addresses()), sent=request.query_params.get("sent"))
 

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ t.share }} What are you? Free 2-minute test{% endblock %}
+{% block description %}{{ t.tag }} Take the free Hidden Gem Test: 12 quick taps show your Value vs Visibility at work. No sign-up.{% endblock %}
+{% block og_image %}{% include "_og_free.html" %}{% endblock %}
+{% block content %}
+<section class="block soft">
+  <div class="wrap">
+    <div class="qz">
+      <div class="qz-card">
+        {% with strip = ['100% free', 'No sign-up', '2 minutes'] %}{% include "_free_strip.html" %}{% endwith %}
+        <p class="qz-kicker">Someone shared their Hidden Gem Test result</p>
+        <div class="qz-res-head" style="background:{{ t.color }}">
+          <div class="em">{{ t.emoji }}</div>
+          <h2>{{ t.name }}</h2>
+          <p>{{ t.tag }}</p>
+        </div>
+        <p style="font-size:17px;margin-top:18px">{{ t.about }}</p>
+        {% with mine = kind, you = None, them = None %}{% include "_quiz_matrix.html" %}{% endwith %}
+        <h3 style="color:var(--navy-dark);margin:0 0 6px">Which one are you?</h3>
+        <p style="margin:0 0 16px">12 quick taps show your Value vs Visibility at work, then a friend link shows your blind spots.</p>
+        <a class="btn big gold" style="width:100%;text-align:center" href="/free/hidden-gem">Take the free test →</a>
+        {% include "_free_from.html" %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

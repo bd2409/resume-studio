@@ -65,6 +65,25 @@ CREATE TABLE IF NOT EXISTS email_log (
     subject  TEXT NOT NULL,
     status   TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS quiz_takes (
+    token       TEXT PRIMARY KEY,
+    created_at  TEXT NOT NULL,
+    name        TEXT NOT NULL DEFAULT '',
+    email       TEXT NOT NULL DEFAULT '',
+    answers     TEXT NOT NULL,
+    result      TEXT NOT NULL,
+    value_pct   INTEGER NOT NULL,
+    vis_pct     INTEGER NOT NULL,
+    source      TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS quiz_friends (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    token       TEXT NOT NULL,
+    created_at  TEXT NOT NULL,
+    friend_name TEXT NOT NULL DEFAULT '',
+    answers     TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS quiz_friends_token ON quiz_friends (token);
 CREATE TABLE IF NOT EXISTS visits (
     day     TEXT NOT NULL,
     path    TEXT NOT NULL,
@@ -297,3 +316,53 @@ def log_email(to_addr, subject, status):
 def recent_emails(limit=30):
     with conn() as c:
         return [dict(r) for r in c.execute("SELECT * FROM email_log ORDER BY id DESC LIMIT ?", (limit,))]
+
+
+# ------------------------------------------------------------------ Hidden Gem quiz
+
+def add_quiz_take(name, answers, result, value_pct, vis_pct, source):
+    token = secrets.token_urlsafe(9)
+    with conn() as c:
+        c.execute("INSERT INTO quiz_takes (token, created_at, name, answers, result, value_pct, vis_pct, source) "
+                  "VALUES (?,?,?,?,?,?,?,?)", (token, now(), name, json.dumps(answers), result, value_pct, vis_pct, source))
+    return token
+
+
+def quiz_take(token):
+    with conn() as c:
+        row = c.execute("SELECT * FROM quiz_takes WHERE token = ?", (token,)).fetchone()
+    if not row:
+        return None
+    take = dict(row)
+    take["answers"] = json.loads(take["answers"])
+    return take
+
+
+def set_quiz_contact(token, name, email):
+    with conn() as c:
+        c.execute("UPDATE quiz_takes SET email = ?, name = CASE WHEN ? != '' THEN ? ELSE name END WHERE token = ?",
+                  (email, name, name, token))
+
+
+def add_quiz_friend(token, friend_name, answers):
+    with conn() as c:
+        c.execute("INSERT INTO quiz_friends (token, created_at, friend_name, answers) VALUES (?,?,?,?)",
+                  (token, now(), friend_name, json.dumps(answers)))
+        return c.execute("SELECT COUNT(*) FROM quiz_friends WHERE token = ?", (token,)).fetchone()[0]
+
+
+def quiz_friends(token):
+    with conn() as c:
+        rows = c.execute("SELECT * FROM quiz_friends WHERE token = ? ORDER BY id", (token,)).fetchall()
+    return [dict(r, answers=json.loads(r["answers"])) for r in rows]
+
+
+def quiz_stats(days=30):
+    """Quiz takes by result and how many friends answered, for /admin."""
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).date().isoformat()
+    with conn() as c:
+        by_type = {r[0]: r[1] for r in c.execute(
+            "SELECT result, COUNT(*) FROM quiz_takes WHERE created_at >= ? GROUP BY result", (since,))}
+        emails = c.execute("SELECT COUNT(*) FROM quiz_takes WHERE created_at >= ? AND email != ''", (since,)).fetchone()[0]
+        friends = c.execute("SELECT COUNT(*) FROM quiz_friends WHERE created_at >= ?", (since,)).fetchone()[0]
+    return {"by_type": by_type, "total": sum(by_type.values()), "emails": emails, "friends": friends}

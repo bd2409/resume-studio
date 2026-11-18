@@ -1,6 +1,7 @@
 {# Link preview for free tools: LinkedIn, WhatsApp and X show this image and title when the link is pasted in a DM. #}
-{% set og_map = {"/free/resume-check": "resume-check", "/free/playbook": "playbook", "/free/marketing-scorecard": "scorecard"} %}
-<meta property="og:image" content="{{ cfg.SITE_URL }}/static/og/{{ og_map.get(request.url.path, 'free') }}.png">
+{% set og_map = {"/free/resume-check": "resume-check", "/free/playbook": "playbook", "/free/marketing-scorecard": "scorecard", "/free/hidden-gem": "quiz"} %}
+{% set og_name = ("quiz-" ~ og_type) if og_type else og_map.get(request.url.path, 'free') %}
+<meta property="og:image" content="{{ cfg.SITE_URL }}/static/og/{{ og_name }}.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Free tool from {{ me.name }}. No sign-up, no card.">
