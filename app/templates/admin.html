@@ -25,6 +25,16 @@
     {% endfor %}
   </table>
 
+  <h2 style="color:var(--navy-dark);margin-top:40px">Free tools: opened vs. used (last 30 days)</h2>
+  <p>Views of each free page by where people came from (utm_source / utm_medium, or the referring site). Link-preview bots are not counted.
+    Used: {{ lead_counts.get('resume-check', 0) }} resume checks, {{ lead_counts.get('playbook', 0) }} playbook emails. The scorecard stores nothing, so only its views show.</p>
+  {% if visits %}
+  <table class="admin">
+    <tr><th>Page</th><th>Source</th><th>Views</th></tr>
+    {% for v in visits %}<tr><td>{{ v.path }}</td><td>{{ v.source }}</td><td>{{ v.views }}</td></tr>{% endfor %}
+  </table>
+  {% else %}<p>No views counted yet.</p>{% endif %}
+
   <h2 style="color:var(--navy-dark);margin-top:40px">Leads and enquiries</h2>
   <p>Free playbook sign-ups, free resume checks and college enquiries. <a href="/admin/leads.csv">Download as CSV</a></p>
   {% if enquiries %}

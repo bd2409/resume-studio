@@ -366,3 +366,23 @@ table.compare td:nth-child(2) { background: #f1f8f4; }
 .li-follow { text-align: center; margin-top: 22px; }
 @media (max-width: 900px) { .li-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) { .li-grid { grid-template-columns: 1fr; } }
+
+/* Free tools: make "free, no sign-up" impossible to miss for people arriving from a LinkedIn DM */
+.free-strip { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; }
+.free-strip li { background: #e7f5ee; color: var(--ok); border: 1px solid #bfe3cf; border-radius: 999px;
+  padding: 5px 12px; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.free-strip li::before { content: "✓ "; }
+.free-from { display: flex; align-items: center; gap: 10px; margin: 14px 0 0; color: var(--muted); font-size: 14px; }
+.free-from img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.drop { display: block; border: 2px dashed #b9c4d6; border-radius: 14px; padding: 22px 16px; text-align: center;
+  background: #f7f9fc; cursor: pointer; margin-top: 6px; }
+.drop strong { display: block; color: var(--navy-dark); font-size: 18px; }
+.drop span { color: var(--muted); font-size: 14px; }
+.drop.has-file { border-color: var(--ok); background: #eef8f2; }
+.drop input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.fine { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
+.email-copy { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.email-copy input { flex: 1 1 200px; margin: 0; }
+.email-copy .btn { flex: 0 0 auto; }
+@media print { .no-print { display: none !important; } }
+.section-title .free-strip { justify-content: center; }

@@ -3,8 +3,6 @@
 <meta property="og:type" content="{{ og_type or 'website' }}">
 <meta property="og:site_name" content="{{ cfg.SITE_NAME }}">
 <meta property="og:locale" content="en_IN">
-<meta property="og:image" content="{{ cfg.SITE_URL }}{{ me.photo }}">
-<meta name="twitter:card" content="summary">
 {% if cfg.GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ cfg.GOOGLE_SITE_VERIFICATION }}">{% endif %}
 {% if cfg.BING_SITE_VERIFICATION %}<meta name="msvalidate.01" content="{{ cfg.BING_SITE_VERIFICATION }}">{% endif %}
 <script type="application/ld+json">{{ {
