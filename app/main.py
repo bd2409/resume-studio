@@ -538,6 +538,7 @@ async def build_submit(
     template: str = Form(render.DEFAULT_TEMPLATE),
     offer_details: str = Form(""),
     resumes: list[UploadFile] = File(...),
+    background: BackgroundTasks = None,
 ):
     if template not in render.TEMPLATES:
         template = render.DEFAULT_TEMPLATE
@@ -579,6 +580,9 @@ async def build_submit(
     db.update(order["id"], files_json=json.dumps(store_uploads(order["id"], saved)), template=template,
               target_role=target_role.strip()[:120], product=product, extra_json=json.dumps(extra),
               user_email=current_user_email(request), device_id=device)
+    if free_trial_state(request, db.get_by_id(order["id"])) == "eligible":
+        # Their first resume is free: skip the "Almost there" payment page and start writing straight away.
+        return remember_device(free_trial(order["token"], request, background), device)
     return remember_device(RedirectResponse(f"/order/{order['token']}", status_code=303), device)
 
 

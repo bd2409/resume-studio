@@ -374,12 +374,21 @@ table.compare td:nth-child(2) { background: #f1f8f4; }
 .free-strip li::before { content: "✓ "; }
 .free-from { display: flex; align-items: center; gap: 10px; margin: 14px 0 0; color: var(--muted); font-size: 14px; }
 .free-from img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
-.drop { display: block; border: 2px dashed #b9c4d6; border-radius: 14px; padding: 22px 16px; text-align: center;
+.upload-one { display: block; position: relative; border: 2px dashed #b9c4d6; border-radius: 14px; padding: 22px 16px; text-align: center;
   background: #f7f9fc; cursor: pointer; margin-top: 6px; }
-.drop strong { display: block; color: var(--navy-dark); font-size: 18px; }
-.drop span { color: var(--muted); font-size: 14px; }
-.drop.has-file { border-color: var(--ok); background: #eef8f2; }
-.drop input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.upload-one strong { display: block; color: var(--navy-dark); font-size: 18px; }
+.upload-one span { color: var(--muted); font-size: 14px; }
+.upload-one.has-file { border-color: var(--ok); background: #eef8f2; }
+/* Kept focusable (not display:none) so the browser can point at it when the file is missing. */
+.upload-one input[type=file] { position: absolute; left: 50%; bottom: 8px; width: 1px; height: 1px; opacity: 0; }
+.step-h { display: flex; align-items: center; gap: 10px; margin: 26px 0 8px; color: var(--navy-dark); font-size: 18px; }
+.step-h:first-of-type { margin-top: 4px; }
+.step-h b { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 15px; flex: 0 0 28px; }
+details.more { margin: 6px 0 14px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: #fff; }
+details.more > summary { cursor: pointer; color: var(--navy); font-weight: 600; }
+details.more[open] > summary { margin-bottom: 12px; }
+.next-cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 0; }
+.next-cta .btn { flex: 1 1 200px; text-align: center; }
 .fine { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
 .email-copy { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .email-copy input { flex: 1 1 200px; margin: 0; }

@@ -15,6 +15,13 @@
       <div><strong>Score: {{ result.score }} / 100</strong><p>{{ result.verdict }}</p></div>
     </div>
     <div class="card" style="margin-bottom:16px">
+      <strong style="color:var(--navy-dark)">Your next step:</strong> fix the points below yourself (the quick wins take under an hour), or let us rewrite the resume with every fix applied.
+      <div class="next-cta">
+        <a class="btn gold" href="/build?mode=improve">{% if cfg.FREE_TRIAL %}Rewrite it for me, first one free{% else %}Rewrite it for me{% endif %}</a>
+        <a class="btn light" href="#fixes">See my fixes ↓</a>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px" id="fixes">
       <h3 style="margin-top:0">💪 Lead with these strengths</h3>
       <ul class="checks" style="margin:6px 0 0">{% for s in result.strengths %}<li>{{ s }}</li>{% endfor %}</ul>
     </div>
@@ -36,8 +43,10 @@
     <div class="form-card" style="margin-bottom:60px;text-align:center">
       <h2 style="color:var(--navy-dark);margin-top:0">Want all of this fixed for you?</h2>
       <p>We rewrite your resume from your real experience, tailored to the job you want, with every fix above applied. Editable Word and PDF, plus a cover letter.</p>
-      <a class="btn big gold" href="/build">{% if cfg.FREE_TRIAL %}Rewrite my resume free{% else %}Rewrite my resume for Rs {{ cfg.PRICE_RUPEES }}{% endif %}</a>
-      <p style="margin-top:14px;font-size:14px"><a href="/free/playbook">Get the free 35+ playbook</a> · <a href="/book/claude">Learn Claude 1:1</a> · <a href="/build?product=premium">Premium, reviewed by {{ cfg.OWNER_NAME }}</a></p>
+      <a class="btn big gold" href="/build?mode=improve">{% if cfg.FREE_TRIAL %}Rewrite my resume free{% else %}Rewrite my resume for Rs {{ cfg.PRICE_RUPEES }}{% endif %}</a>
+      {% if cfg.FREE_TRIAL %}<p class="fine" style="margin-top:10px">Your first resume + cover letter is free, then Rs {{ cfg.PRICE_RUPEES }} each. No card needed for the free one.</p>{% endif %}
+      <p style="margin-top:14px;font-size:14px"><a href="https://wa.me/?text={{ ('I just checked my resume for free here, takes a minute and no sign-up: ' ~ cfg.SITE_URL ~ '/check') | urlencode }}" target="_blank" rel="noopener">Share this free check on WhatsApp</a></p>
+      <p style="margin-top:14px;font-size:14px"><a href="/free/playbook">Read the free 35+ playbook</a> · <a href="/book/claude">Learn Claude 1:1</a> · <a href="/build?product=premium">Premium, reviewed by {{ cfg.OWNER_NAME }}</a></p>
     </div>
   {% else %}
     <div class="page-head" style="padding-top:0">
@@ -47,7 +56,7 @@
     </div>
     <form class="form-card" method="post" action="/free/resume-check" enctype="multipart/form-data" id="check-form" style="margin:18px 0 60px">
       {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
-      <label for="resume" class="drop" id="drop">
+      <label for="resume" class="upload-one" id="drop">
         <input type="file" id="resume" name="resume" required accept=".pdf,.doc,.docx,.rtf,.odt,.txt">
         <strong id="drop-title">📄 Tap to upload your resume</strong>
         <span id="drop-hint">PDF or Word, up to {{ cfg.MAX_FILE_MB }} MB</span>
