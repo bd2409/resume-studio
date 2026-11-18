@@ -3,77 +3,84 @@
 {% block content %}
 <div class="wrap narrow">
   <div class="page-head">
-    <h1>Let's get started</h1>
-    <p>Upload your resumes and tell us what you're aiming for. Pick what you'd like below.{% if cfg.FREE_TRIAL %} Your first resume + cover letter is free; other services are paid once on the next step.{% else %} You pay once on the next step.{% endif %}</p>
+    <h1>Let's build your resume</h1>
+    <p>Three quick steps, about 2 minutes. We write it from your real experience; you can edit everything after.</p>
   </div>
-  {% if cfg.FREE_TRIAL %}<div class="alert ok" style="margin-top:18px"><strong>Your first resume + cover letter is free.</strong> Choose "Resume + cover letter" below. Each person gets one free resume; after that it's Rs {{ cfg.PRICE_RUPEES }}.</div>{% endif %}
-  <form class="form-card" method="post" action="/build" enctype="multipart/form-data" id="build-form" style="margin:24px 0 60px">
+  {% if cfg.FREE_TRIAL %}<div class="alert ok" style="margin-top:14px"><strong>Your first resume + cover letter is free.</strong> No card needed. After that it's Rs {{ cfg.PRICE_RUPEES }} each.</div>{% endif %}
+  <form class="form-card" method="post" action="/build" enctype="multipart/form-data" id="build-form" style="margin:18px 0 60px">
     {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
     {% set product = form.product or request.query_params.get('product') or 'resume' %}
     {% if product not in cfg.CAREER_PRODUCTS %}{% set product = 'resume' %}{% endif %}
-    <label>What would you like?</label>
-    <div class="mode-pick prod-pick">
-      {% for key in cfg.CAREER_PRODUCTS %}{% set pr = cfg.PRODUCTS[key] %}
-      <label class="mode{% if product == key %} on{% endif %}" data-resume="{{ 1 if pr.resume else 0 }}"><input type="radio" name="product" value="{{ key }}" {% if product == key %}checked{% endif %}>
-        <strong>{{ pr.icon }} {{ pr.label }}</strong><span>{% if key == 'resume' and cfg.FREE_TRIAL %}<b style="color:var(--ok)">First one free</b> · then Rs {{ '{:,}'.format(pr.price) }}{% else %}Rs {{ '{:,}'.format(pr.price) }}{% endif %}{% if key == 'bundle' %} · save Rs {{ '{:,}'.format(cfg.PRICE_RUPEES + cfg.PRICE_LINKEDIN - cfg.PRICE_BUNDLE) }}{% elif key == 'premium' %} · reviewed by {{ cfg.OWNER_NAME }}{% endif %}</span></label>
-      {% endfor %}
-    </div>
-    <p class="prod-blurb" id="prod-blurb"></p>
-    {% set mode = form.mode or request.query_params.get('mode') or 'tailor' %}
-    <div class="mode-pick">
-      <label class="mode{% if mode != 'improve' %} on{% endif %}"><input type="radio" name="mode" value="tailor" {% if mode != 'improve' %}checked{% endif %}>
-        <strong>Tailor to a job</strong><span>I have a job posting. Match my resume to it.</span></label>
-      <label class="mode{% if mode == 'improve' %} on{% endif %}"><input type="radio" name="mode" value="improve" {% if mode == 'improve' %}checked{% endif %}>
-        <strong>Improve my resume</strong><span>No specific posting. Make it stronger for the kind of role I want.</span></label>
-    </div>
 
-    <label>Your resumes <span class="hint">(1 to {{ cfg.MAX_RESUMES }} files, PDF or Word, up to {{ cfg.MAX_FILE_MB }} MB each)</span></label>
+    <h2 class="step-h"><b>1</b> Upload your resume</h2>
     <div class="drop" id="drop">
       <input type="file" id="resumes" name="resumes" multiple accept=".pdf,.doc,.docx,.rtf,.odt,.txt">
-      <strong>Drop files here or click to choose</strong><br>
-      <span style="color:var(--muted);font-size:14px">Different versions of your resume help us find more of your achievements.</span>
+      <strong>📄 Tap to upload your resume</strong><br>
+      <span style="color:var(--muted);font-size:14px">PDF or Word. Have older versions too? Add up to {{ cfg.MAX_RESUMES }}; we pull achievements from all of them.</span>
     </div>
     <ul class="file-list" id="file-list"></ul>
 
-    <div id="jd-block">
-      <label for="job_description">Job description <span class="hint">(paste the full posting)</span></label>
-      <textarea id="job_description" name="job_description" rows="10" placeholder="Paste the job title, responsibilities and requirements here">{{ form.job_description or '' }}</textarea>
+    <h2 class="step-h"><b>2</b> What's it for?</h2>
+    {% set mode = form.mode or request.query_params.get('mode') or 'tailor' %}
+    <div class="mode-pick">
+      <label class="mode{% if mode != 'improve' %} on{% endif %}"><input type="radio" name="mode" value="tailor" {% if mode != 'improve' %}checked{% endif %}>
+        <strong>A specific job</strong><span>I have a job posting. Match my resume to it.</span></label>
+      <label class="mode{% if mode == 'improve' %} on{% endif %}"><input type="radio" name="mode" value="improve" {% if mode == 'improve' %}checked{% endif %}>
+        <strong>A kind of role</strong><span>No posting yet. Make it stronger for the role I want.</span></label>
     </div>
-    <div id="offer-block">
-      <label for="offer_details">About your offer <span class="hint">(company, role, the offer, your current pay, any other offers or interviews)</span></label>
-      <textarea id="offer_details" name="offer_details" rows="5" placeholder="For example: Offer from ABC Fintech for Senior PM, Rs 32 LPA fixed + Rs 4 LPA variable. Current CTC Rs 26 LPA. Also in final round at XYZ. Notice period 60 days.">{{ form.offer_details or '' }}</textarea>
+    <div id="jd-block">
+      <label for="job_description">Paste the job posting <span class="hint">(copy the whole ad from LinkedIn or Naukri)</span></label>
+      <textarea id="job_description" name="job_description" rows="6" placeholder="Paste the job title, responsibilities and requirements here">{{ form.job_description or '' }}</textarea>
     </div>
     <div id="role-block">
       <label for="target_role">Role you're aiming for</label>
       <input type="text" id="target_role" name="target_role" maxlength="120" value="{{ form.target_role or '' }}" placeholder="For example: Senior Product Manager, fintech">
     </div>
 
+    <details class="more"{% if product != 'resume' %} open{% endif %}>
+      <summary>{% if product == 'resume' %}Getting: Resume + cover letter{% if cfg.FREE_TRIAL %} (first one free){% endif %}. Want something else?{% else %}What you're getting{% endif %}</summary>
+      <div class="mode-pick prod-pick">
+        {% for key in cfg.CAREER_PRODUCTS %}{% set pr = cfg.PRODUCTS[key] %}
+        <label class="mode{% if product == key %} on{% endif %}" data-resume="{{ 1 if pr.resume else 0 }}"><input type="radio" name="product" value="{{ key }}" {% if product == key %}checked{% endif %}>
+          <strong>{{ pr.icon }} {{ pr.label }}</strong><span>{% if key == 'resume' and cfg.FREE_TRIAL %}<b style="color:var(--ok)">First one free</b> · then Rs {{ '{:,}'.format(pr.price) }}{% else %}Rs {{ '{:,}'.format(pr.price) }}{% endif %}{% if key == 'bundle' %} · save Rs {{ '{:,}'.format(cfg.PRICE_RUPEES + cfg.PRICE_LINKEDIN - cfg.PRICE_BUNDLE) }}{% elif key == 'premium' %} · reviewed by {{ cfg.OWNER_NAME }}{% endif %}</span></label>
+        {% endfor %}
+      </div>
+      <p class="prod-blurb" id="prod-blurb"></p>
+    </details>
+    <div id="offer-block">
+      <label for="offer_details">About your offer <span class="hint">(company, role, the offer, your current pay, any other offers or interviews)</span></label>
+      <textarea id="offer_details" name="offer_details" rows="5" placeholder="For example: Offer from ABC Fintech for Senior PM, Rs 32 LPA fixed + Rs 4 LPA variable. Current CTC Rs 26 LPA. Also in final round at XYZ. Notice period 60 days.">{{ form.offer_details or '' }}</textarea>
+    </div>
+
+    <h2 class="step-h"><b>3</b> Where should we send it?</h2>
     <div class="row3">
       <div>
-        <label for="customer_name">Your full name</label>
-        <input type="text" id="customer_name" name="customer_name" required value="{{ form.customer_name or '' }}">
+        <label for="customer_name">Your full name <span class="hint">(as it should appear on the resume)</span></label>
+        <input type="text" id="customer_name" name="customer_name" required autocomplete="name" value="{{ form.customer_name or '' }}">
       </div>
       <div>
         <label for="email">Email</label>
-        <input type="email" id="email" name="email" required value="{{ form.email or '' }}">
+        <input type="email" id="email" name="email" required autocomplete="email" inputmode="email" value="{{ form.email or '' }}">
       </div>
       <div>
         <label for="phone">Phone</label>
-        <input type="tel" id="phone" name="phone" required value="{{ form.phone or '' }}" placeholder="+91">
+        <input type="tel" id="phone" name="phone" required autocomplete="tel" inputmode="tel" value="{{ form.phone or '' }}" placeholder="+91">
       </div>
     </div>
 
     <div id="design-block">
-    <label style="margin-top:22px">Choose a design <span class="hint">(you can switch later for free)</span></label>
-    {% with selected = form.template or (request.query_params.get('template') if request.query_params.get('template') in resume_templates else 'classic'), autosubmit = False %}{% include "_template_picker.html" %}{% endwith %}
+    <details class="more" style="margin-top:18px">
+      <summary>Design: Classic. Change it (you can also switch later)</summary>
+      {% with selected = form.template or (request.query_params.get('template') if request.query_params.get('template') in resume_templates else 'classic'), autosubmit = False %}{% include "_template_picker.html" %}{% endwith %}
+    </details>
     </div>
 
-    <label class="check" style="margin-top:22px">
+    <label class="check" style="margin-top:18px">
       <input type="checkbox" name="consent" value="yes" required>
-      <span>I agree to the <a href="/terms" target="_blank">terms</a> and <a href="/privacy" target="_blank">privacy policy</a>, and consent to my files being processed to create my resume. They are deleted after {{ cfg.RETENTION_DAYS }} days.</span>
+      <span>I agree to the <a href="/terms" target="_blank">terms</a> and <a href="/privacy" target="_blank">privacy policy</a>. My files are used only to write my resume and are deleted after {{ cfg.RETENTION_DAYS }} days.</span>
     </label>
 
-    <button class="btn big" type="submit" id="submit" style="width:100%;margin-top:24px">Continue to payment</button>
+    <button class="btn big" type="submit" id="submit" style="width:100%;margin-top:22px">Continue</button>
   </form>
 </div>
 {% endblock %}
@@ -88,6 +95,7 @@ const BLURBS = {};
     const improve = document.querySelector('input[name=mode]:checked').value === 'improve';
     document.getElementById('jd-block').style.display = improve ? 'none' : '';
     document.getElementById('job_description').required = !improve;
+    document.getElementById('role-block').querySelector('label').textContent = improve ? "Role you're aiming for" : "Role you're aiming for (optional)";
     document.getElementById('target_role').required = improve;
     document.querySelectorAll('.mode').forEach(l => l.classList.toggle('on', l.querySelector('input').checked));
     const picked = document.querySelector('input[name=product]:checked');
@@ -96,9 +104,14 @@ const BLURBS = {};
     document.getElementById('offer-block').style.display = product === 'salary' ? '' : 'none';
     document.getElementById('offer_details').required = product === 'salary';
     document.getElementById('prod-blurb').textContent = BLURBS[product] || '';
-    document.getElementById('submit').textContent = 'Continue to payment';
+    document.getElementById('submit').textContent = (product === 'resume' && {{ 'true' if cfg.FREE_TRIAL else 'false' }})
+      ? 'Write my resume (first one free)' : 'Continue to payment';
   }
   modes.forEach(m => m.addEventListener('change', syncMode));
+  document.querySelectorAll('input[name=template]').forEach(t => t.addEventListener('change', () => {
+    const sum = document.querySelector('#design-block summary');
+    sum.textContent = 'Design: ' + t.parentElement.querySelector('span').textContent + '. Change it (you can also switch later)';
+  }));
   document.querySelectorAll('input[name=product]').forEach(m => m.addEventListener('change', syncMode));
   syncMode();
 })();
