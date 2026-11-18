@@ -155,3 +155,13 @@ class ResumeCheck(BaseModel):
     age_signals: List[AgeSignal] = Field(description="3 to 7 things that date the resume or bury recent impact, with fixes")
     quick_wins: List[str] = Field(description="3 to 5 changes they can make in under an hour")
     ai_skills: str = Field(description="2 or 3 sentences on which AI skills would strengthen this profile and how to show them")
+
+
+class JobMatchCheck(BaseModel):
+    """Resume check for the Claude connector: works from pasted text, with or without a job description."""
+    score: int = Field(description="0 to 100: how well the resume fits the job (or the target role, or recruiter-readiness if neither is given)")
+    verdict: str = Field(description="One or two honest, encouraging sentences summarising the fit")
+    strengths: List[str] = Field(description="3 to 5 real strengths in the resume that matter for this job")
+    matched_keywords: List[str] = Field(description="Important skills and keywords from the job that the resume already shows (empty if no job description)")
+    missing_keywords: List[str] = Field(description="Important skills and keywords from the job that the resume does not show (empty if no job description)")
+    top_fixes: List[str] = Field(description="The 3 changes that would raise the candidate's chances most, each specific and actionable")

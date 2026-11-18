@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Resume Studio for Claude | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}Check your resume against any job inside Claude, then build a tailored resume and cover letter.{% endblock %}
+{% block content %}
+<section class="wrap narrow prose" style="max-width:780px;padding-top:30px">
+  <h1>Resume Studio for Claude</h1>
+  <p>Resume Studio's Claude connector checks your resume against a job right inside your Claude chat: a match score out of 100, the keywords you hit and miss, your strengths, and the three fixes that will help most.</p>
+
+  <h2>Set it up</h2>
+  <ol>
+    <li>In Claude, open <strong>Settings &gt; Connectors</strong> and find <strong>Resume Studio</strong> in the directory, then select <strong>Connect</strong>.</li>
+    <li>Or add it as a custom connector with this URL: <code>{{ cfg.SITE_URL }}/mcp</code></li>
+    <li>No account or sign-in is needed.</li>
+  </ol>
+
+  <h2>What to ask</h2>
+  <ul>
+    <li>"Score my resume for this product manager job" (paste both)</li>
+    <li>"What keywords is my resume missing for this role?"</li>
+    <li>"Help me get a tailored resume for this job"</li>
+  </ul>
+
+  <h2>What it can do</h2>
+  <ul>
+    <li><strong>Check resume against a job</strong>: reads the resume and job text you share in the chat and returns a score, matched and missing keywords, strengths and top fixes.</li>
+    <li><strong>Start a tailored resume</strong>: gives you a link to <a href="/resume">Resume Studio</a>, where you upload your resumes and get a rewritten resume and cover letter in 4 designs as Word and PDF. Your first one is free.</li>
+  </ul>
+
+  <h2>Your data</h2>
+  <p>The resume and job text are sent to our server only to produce your check, and are not stored. We keep a count of checks per day and the score, with no name, email or resume text. See the <a href="/privacy">privacy policy</a>.</p>
+
+  <h2>Support</h2>
+  <p>Questions or problems: <a href="mailto:{{ cfg.CONTACT_EMAIL }}">{{ cfg.CONTACT_EMAIL }}</a>.</p>
+</section>
+{% endblock %}
