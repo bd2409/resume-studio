@@ -33,15 +33,15 @@
         </div>
         {% endif %}
 
-        <div class="qz-section qz-friend">
-          <h3>{{ '👀 Get more answers' if friends else '👀 Find your blind spots' }}</h3>
-          <p style="margin:0">{% if friends %}{{ friends|length }} answered so far. 3 or more gives a clearer picture.{% else %}No friends have answered yet. Send this link to 2 or 3 colleagues or friends; their answers show up here.{% endif %}</p>
+        <details class="qz-section qz-optional"{% if friends %} open{% endif %}>
+          <summary>{{ ('Optional: get more views (' ~ friends|length ~ ' so far)') if friends else 'Optional: curious how others see you?' }}</summary>
+          <p style="margin:10px 0 0">Only if you want to. Anyone you send this private link to answers the same 12 questions about you, and their view shows up here, only for you.</p>
           <input value="{{ friend_link }}" readonly aria-label="Your friend link" onclick="this.select()">
           <div class="qz-share">
             <a class="wa" target="_blank" rel="noopener" href="https://wa.me/?text={{ ('Quick favour: how do you see me at work? 12 quick taps, 90 seconds: ' ~ friend_link)|urlencode }}">Send on WhatsApp</a>
             <a class="li" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url={{ (cfg.SITE_URL ~ '/free/hidden-gem/r/' ~ result.key ~ '?utm_source=share&utm_medium=quiz')|urlencode }}">Share my type</a>
           </div>
-        </div>
+        </details>
 
         <div class="qz-section"><h3>Do this next</h3><ol style="padding-left:20px">{% for s in result.next %}<li>{{ s }}</li>{% endfor %}</ol></div>
         <div class="qz-section">

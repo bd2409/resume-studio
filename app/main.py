@@ -848,7 +848,7 @@ async def hidden_gem_email(request: Request, token: str):
                 f"<p>Hi {html.escape(_first_name(name))},</p><p><strong>{t['emoji']} {t['name']}</strong>: {html.escape(t['tag'])}</p>"
                 f"<p>Value: {take['value_pct']}% · Visibility: {take['vis_pct']}%</p><p>{html.escape(t['about'])}</p>"
                 f"<p>Do this next:</p><ul>{steps}</ul>"
-                f"<p>Your private results page (send the friend link there to 2 or 3 colleagues to find your blind spots): "
+                f"<p>Your private results page: "
                 f"<a href=\"{link}\">{link}</a></p><p>{config.OWNER_NAME}</p>")
     return JSONResponse({"ok": True})
 
