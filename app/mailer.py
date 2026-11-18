@@ -16,6 +16,27 @@ def _use_smtp():
     return bool(config.SMTP_USER and config.SMTP_PASSWORD)
 
 
+def method():
+    """Which route emails take right now (no secret values)."""
+    if _use_smtp():
+        return f"own mailbox (SMTP {config.SMTP_HOST}:{config.SMTP_PORT})"
+    if config.RESEND_API_KEY:
+        return "Resend (SMTP_USER / SMTP_PASSWORD not set)"
+    return "none"
+
+
+def recent_results(limit=5):
+    """The last few send results with addresses hidden, so problems show up on /healthz."""
+    import re
+    try:
+        from . import db
+        rows = db.recent_emails(limit)
+    except Exception:
+        return []
+    hide = lambda t: re.sub(r"[\w.+-]+@[\w.-]+", "<email>", t or "")
+    return [f"{r['at'][:16]} {hide(r['subject'])[:50]}: {hide(r['status'])[:160]}" for r in rows]
+
+
 def status():
     """Why emails may not be going out, in plain words. None when everything looks set up."""
     if _use_smtp():
