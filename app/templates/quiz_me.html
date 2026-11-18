@@ -36,9 +36,9 @@
         <details class="qz-section qz-optional"{% if friends %} open{% endif %}>
           <summary>{{ ('Optional: get more views (' ~ friends|length ~ ' so far)') if friends else 'Optional: curious how others see you?' }}</summary>
           <p style="margin:10px 0 0">Only if you want to. Anyone you send this private link to answers the same 12 questions about you, and their view shows up here, only for you.</p>
-          <input value="{{ friend_link }}" readonly aria-label="Your friend link" onclick="this.select()">
+          <input value="{{ friend_link }}" readonly aria-label="Your private link for a colleague" onclick="this.select()" oncopy="qzTrack('copy')">
           <div class="qz-share">
-            <a class="wa" target="_blank" rel="noopener" href="https://wa.me/?text={{ ('Quick favour: how do you see me at work? 12 quick taps, 90 seconds: ' ~ friend_link)|urlencode }}">Send on WhatsApp</a>
+            <a class="wa" target="_blank" rel="noopener" onclick="qzTrack('whatsapp')" href="https://wa.me/?text={{ ('Quick favour: how do you see me at work? 12 quick taps, 90 seconds: ' ~ friend_link)|urlencode }}">Send on WhatsApp</a>
             <a class="li" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url={{ (cfg.SITE_URL ~ '/free/hidden-gem/r/' ~ result.key ~ '?utm_source=share&utm_medium=quiz')|urlencode }}">Share my type</a>
           </div>
         </details>
@@ -52,4 +52,12 @@
     </div>
   </div>
 </section>
+{% endblock %}
+{% block scripts %}
+<script>
+function qzTrack(m) {
+  try { fetch('/free/hidden-gem/shared/{{ take.token }}', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ method: m }), keepalive: true }); } catch (e) {}
+}
+</script>
 {% endblock %}

@@ -62,6 +62,26 @@
   <h2 style="color:var(--navy-dark);margin-top:40px">Hidden Gem quiz (last 30 days)</h2>
   <p>{{ quiz_stats.total }} people finished the quiz, {{ quiz_stats.emails }} left an email (each one is in Leads below and in the Google Sheet), {{ quiz_stats.friends }} friend answers.
     {% for k, t in quiz_types.items() %}{{ t.emoji }} {{ t.name }}: {{ quiz_stats.by_type.get(k, 0) }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+  <p>Colleague links: {{ quiz_stats.sharers }} people shared their link, opened {{ quiz_stats.opens }} times, {{ quiz_stats.friends }} answers came back, and {{ quiz_stats.referred }} of those colleagues then took the quiz themselves.</p>
+  {% if quiz_rows %}
+  <div style="overflow-x:auto">
+  <table class="admin" id="quiz-links">
+    <tr><th>When (UTC)</th><th>Who</th><th>Result</th><th>Came from</th><th>Shared link</th><th>Opened</th><th>Answered</th><th>Brought in</th><th>Referred by</th><th></th></tr>
+    {% for q in quiz_rows %}<tr>
+      <td>{{ q.created_at[:16].replace('T', ' ') }}</td>
+      <td>{{ q.name or 'Anonymous' }}{% if q.email %}<br><small>{{ q.email }}</small>{% endif %}</td>
+      <td>{{ quiz_types[q.result].emoji }} {{ quiz_types[q.result].name[4:] }}</td>
+      <td>{{ q.source or '-' }}</td>
+      <td>{% if q.shared_whatsapp or q.shared_copy %}{% if q.shared_whatsapp %}WhatsApp{% endif %}{% if q.shared_whatsapp and q.shared_copy %} + {% endif %}{% if q.shared_copy %}copied{% endif %}{% else %}No{% endif %}</td>
+      <td>{{ q.link_opens }}</td>
+      <td>{{ q.answers }}</td>
+      <td>{{ q.referred }}</td>
+      <td>{{ (q.referred_by_name or 'Anonymous') if q.referred_by else '-' }}</td>
+      <td><a href="/free/hidden-gem/me/{{ q.token }}" target="_blank">Open</a></td>
+    </tr>{% endfor %}
+  </table>
+  </div>
+  {% endif %}
 
   <h2 style="color:var(--navy-dark);margin-top:40px">Leads and enquiries</h2>
   <p>Free playbook sign-ups, free resume checks and college enquiries. <a href="/admin/leads.csv">Download as CSV</a></p>
