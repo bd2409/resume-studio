@@ -523,6 +523,7 @@ def healthz():
             "cashfree_mode": payments.mode(), "checkout_for_everyone": payments.enabled() and config.AI_MODE == "live"
             and payments.mode() == "production",
             "emails": mailer.status() or "set up", "owner_alerts_to": "set" if config.OWNER_EMAIL else "not set",
+            "emails_sent_via": mailer.method(), "last_emails": mailer.recent_results(),
             "linkedin_posts_embedded": f"{sum(1 for p in linkedin.posts() if p['embed'])} of {len(linkedin.POSTS)}"}
 
 
