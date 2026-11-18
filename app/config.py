@@ -42,7 +42,15 @@ CASHFREE_API_VERSION = os.getenv("CASHFREE_API_VERSION", "2025-01-01")
 DEV_SKIP_PAYMENT = _bool("DEV_SKIP_PAYMENT", False)
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-EMAIL_FROM = os.getenv("EMAIL_FROM", f"{SITE_NAME} <no-reply@example.com>")
+# Google Apps Script web app URL; every lead, order and download is added as a row in your sheet.
+SHEET_WEBHOOK_URL = os.getenv("SHEET_WEBHOOK_URL", "").strip()
+# Or send through your own mailbox (e.g. hello@yourdomain on GoDaddy email): set SMTP_USER and SMTP_PASSWORD.
+SMTP_HOST = os.getenv("SMTP_HOST", "smtpout.secureserver.net")  # GoDaddy's outgoing mail server
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USER = os.getenv("SMTP_USER", "").strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+EMAIL_FROM = os.getenv("EMAIL_FROM", f"{os.getenv('OWNER_NAME', 'Resume Studio')} <{SMTP_USER}>" if SMTP_USER
+                       else f"{SITE_NAME} <no-reply@example.com>")
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 

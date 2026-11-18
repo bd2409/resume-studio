@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
 
-from . import ai, auth, blog, config, db, faq, linkedin, mailer, payments, render
+from . import ai, auth, blog, config, db, faq, linkedin, mailer, payments, render, sheet
 from .profile import PROFILE
 from .schemas import Profile, Resume
 
@@ -159,13 +159,17 @@ def extra_of(order):
 
 def owner_alert(order, what):
     product = product_of(order)
-    lines = [f"{what}: {product['label']} (Rs {order['amount_paise'] // 100})",
+    free = (order.get("rzp_payment_id") or "").startswith(db.FREE_PREFIX)
+    lines = [f"{what}: {product['label']} ({'FREE first resume' if free else 'Rs ' + str(order['amount_paise'] // 100)})",
              f"{order['customer_name']} · {order['email']} · {order['phone']}"]
     lines += [f"{k.replace('_', ' ').capitalize()}: {v}" for k, v in extra_of(order).items() if v]
     if order.get("target_role"):
         lines.append(f"Target role: {order['target_role']}")
-    lines.append(f"{config.SITE_URL}/order/{order['token']}")
+    link = f"{config.SITE_URL}/order/{order['token']}"
+    lines.append(link)
     mailer.owner_alert(f"{what}: {product['label']} - {order['customer_name']}", lines)
+    sheet.append(what, order["customer_name"], order["email"], order["phone"], product["label"],
+                 "Free" if free else f"Rs {order['amount_paise'] // 100}", order.get("target_role") or "", link)
 
 
 def run_generation(order_id, instructions="", part="all"):
@@ -232,9 +236,11 @@ def run_generation(order_id, instructions="", part="all"):
             db.update(order_id, resume_json=resume.model_dump_json(), notes_json=json.dumps(notes))
         db.update(order_id, status="ready", progress="")
         if first_time:
-            mailer.order_ready(db.get_by_id(order_id))
-            if product["human"]:
-                owner_alert(db.get_by_id(order_id), "Premium order to review")
+            done = db.get_by_id(order_id)
+            mailer.order_ready(done)
+            # Tell Bhargab about every new order, so he knows who used the service even if they never download.
+            owner_alert(done, "Premium order to review" if product["human"] else
+                        "New free resume" if (done["rzp_payment_id"] or "").startswith(db.FREE_PREFIX) else "New paid order")
     except Exception as exc:
         log.exception("Generation failed for %s", order_id)
         db.update(order_id, status="failed", progress="", error=str(exc)[:500])
@@ -337,6 +343,8 @@ async def count_free_page_views(request: Request, call_next):
             await run_in_threadpool(db.add_visit, path, source)
         except Exception:
             log.exception("Could not count visit")
+        if source not in ("internal",) and not request.cookies.get("rs_src"):
+            response.set_cookie("rs_src", source, max_age=60 * 60 * 24 * 30, samesite="lax")
     return response
 
 
@@ -514,6 +522,7 @@ def healthz():
     return {"ok": True, "ai_connected": config.AI_MODE == "live", "cashfree_keys_set": payments.enabled(),
             "cashfree_mode": payments.mode(), "checkout_for_everyone": payments.enabled() and config.AI_MODE == "live"
             and payments.mode() == "production",
+            "emails": mailer.status() or "set up", "owner_alerts_to": "set" if config.OWNER_EMAIL else "not set",
             "linkedin_posts_embedded": f"{sum(1 for p in linkedin.posts() if p['embed'])} of {len(linkedin.POSTS)}"}
 
 
@@ -676,6 +685,19 @@ def _valid_email(email):
     return re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email or "") is not None
 
 
+def _source(request):
+    """Where a visitor first came from (utm_source / utm_medium), remembered in a cookie by the visit counter."""
+    return request.cookies.get("rs_src", "")[:60]
+
+
+def lead_alert(request, kind, name, email, phone, detail=""):
+    """A new free-tool lead: email Bhargab and add a row to his Google Sheet."""
+    src = _source(request)
+    mailer.owner_alert(f"New lead ({kind}): {name}", [f"{kind}: {name} · {email} · {phone or 'no phone'}",
+                                                       detail, f"Came from: {src or 'unknown'}"])
+    sheet.append(f"Lead: {kind}", name, email, phone, detail, "Free", src)
+
+
 def _name_from_email(email):
     """A friendly first name when people skip the name box: "rahul.sharma@x.com" -> "Rahul"."""
     first = re.split(r"[._\-+0-9]", email.split("@")[0])[0]
@@ -702,6 +724,7 @@ async def playbook_signup(request: Request):
     form["name"] = form["name"] or _name_from_email(form["email"])
     if not db.lead_for("playbook", form["email"]):
         db.add_enquiry("playbook", form["name"], form["email"], form["phone"], "", f"Age: {form['age_band'] or 'not given'}")
+        lead_alert(request, "35+ playbook", form["name"], form["email"], form["phone"])
     token = auth.make_cookie(form["email"], form["name"])
     link = f"{config.SITE_URL}/free/playbook?t={urllib.parse.quote(token)}"
     mailer.send(form["email"], f"Your 35+ Career Comeback Playbook - {config.SITE_NAME}",
@@ -756,6 +779,8 @@ async def resume_check_submit(request: Request):
     finally:
         shutil.rmtree(tmp.parent, ignore_errors=True)  # the free check keeps no copy of the resume
     db.add_enquiry("resume-check", form["name"], form["email"], form["phone"], form["target_role"], result.model_dump_json())
+    lead_alert(request, "Resume check", form["name"], form["email"], form["phone"],
+               f"Score {result.score}/100" + (f", aiming for {form['target_role']}" if form["target_role"] else ""))
     link = f"{config.SITE_URL}/free/resume-check?t={token}"
     mailer.send(form["email"], f"Your free resume check: {result.score}/100 - {config.SITE_NAME}",
                 f"<p>Hi {html.escape(form['name'])},</p><p>Your resume scored {result.score}/100. "
@@ -783,6 +808,7 @@ async def enquiry(request: Request):
     mailer.owner_alert(f"College enquiry: {form['org']}",
                        [f"{form['name']} ({form['role']}) · {form['email']} · {form['phone']}", form["org"],
                         f"Students per year: {form['students']}", form["details"]])
+    sheet.append("Lead: college enquiry", form["name"], form["email"], form["phone"], form["org"], "", _source(request))
     return page(request, "colleges.html", sent=True, form={})
 
 
@@ -1086,9 +1112,21 @@ def regenerate(token: str, background: BackgroundTasks, instructions: str = Form
     return RedirectResponse(f"/order/{token}" + ("" if part == "resume" else "/" + part), status_code=303)
 
 
+def _track_download(order, kind, inline):
+    """Logs every download; the order's first one also emails Bhargab who downloaded what."""
+    if inline:
+        return  # a preview in the browser, not a download
+    try:
+        if db.add_download(order["id"], kind):
+            threading.Thread(target=owner_alert, args=(order, f"Downloaded ({kind})"), daemon=True).start()
+    except Exception:
+        log.exception("Could not record download")
+
+
 @app.get("/order/{token}/download/{kind}")
 def download(token: str, kind: str, inline: int = 0):
     order = load_order(token)
+    _track_download(order, kind, inline)
     docx_path, pdf_path = output_paths(order)
     cover_docx, cover_pdf = cover_paths(order)
     if kind == "pack-docx" and order["pack_json"]:
@@ -1137,7 +1175,20 @@ def admin(request: Request):
     for e in leads:
         e["score"] = json.loads(e["details"]).get("score") if e["details"].startswith("{") else None
     visits, lead_counts = db.visit_summary(30)
-    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts)
+    counts = db.download_counts()
+    for o in orders:
+        o["downloads"], o["last_download"] = counts.get(o["id"], (0, ""))
+        o["free"] = (o["rzp_payment_id"] or "").startswith(db.FREE_PREFIX)
+    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts,
+                downloads=db.recent_downloads(100), emails=db.recent_emails(30), email_problem=mailer.status(),
+                owner_email=", ".join(mailer.owner_addresses()), sent=request.query_params.get("sent"))
+
+
+@app.post("/admin/test-email", dependencies=[Depends(admin_auth)])
+def admin_test_email():
+    ok = mailer.send(mailer.owner_addresses() or [config.CONTACT_EMAIL], f"Test email from {config.SITE_NAME}",
+                     "<p>Emails from your site are working. You'll get an alert like this for every new resume and first download.</p>")
+    return RedirectResponse(f"/admin?sent={'ok' if ok else 'failed'}", status_code=303)
 
 
 @app.get("/admin/leads.csv", dependencies=[Depends(admin_auth)])
