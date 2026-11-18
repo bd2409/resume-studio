@@ -1,6 +1,8 @@
 {% extends "base.html" %}
-{% block robots %}<meta name="robots" content="noindex">{% endblock %}
-{% block title %}The 35+ Career Comeback Playbook | {{ cfg.SITE_NAME }}{% endblock %}
+{% block robots %}{% if reader %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+{% block title %}FREE: The 35+ Career Comeback Playbook, no sign-up | {{ cfg.SITE_NAME }}{% endblock %}
+{% block description %}Free guide for professionals over 35: age-proof your resume and LinkedIn, and 15 copy-paste Claude AI prompts. Read it right now, no sign-up.{% endblock %}
+{% block og_image %}{% include "_og_free.html" %}{% endblock %}
 {% macro prompt(id, text) %}
 <div class="li-section pack-item">
   <h3>Prompt <button type="button" class="btn small light copy-btn" data-copy="{{ id }}">Copy</button></h3>
@@ -10,8 +12,16 @@
 {% block content %}
 <div class="wrap narrow prose" style="max-width:820px;padding-bottom:60px">
   <div class="page-head">
+    <div class="no-print">{% with strip = ['100% free', 'No sign-up', 'Read it right here'] %}{% include "_free_strip.html" %}{% endwith %}</div>
     <h1>The 35+ Career Comeback Playbook</h1>
-    <p>For {{ reader.name or 'you' }}, from {{ cfg.OWNER_NAME }}. Read it once, then keep it open while you work through the 30-day plan at the end. <button type="button" class="btn small light" onclick="window.print()">Print or save as PDF</button></p>
+    <p>For {{ reader.name if reader and reader.name else 'you' }}, from {{ cfg.OWNER_NAME }}. Read it once, then keep it open while you work through the 30-day plan at the end. <button type="button" class="btn small light no-print" onclick="window.print()">Print or save as PDF</button></p>
+    {% set form = form or {} %}
+    {% if sent %}
+    <div class="alert ok no-print" style="margin-top:14px">Done. A copy is on its way to your inbox, so you can come back to it anytime.</div>
+    {% elif not reader %}
+    <p class="no-print" style="margin-top:10px;font-size:15px"><a href="#email-copy">Email me a copy</a> (optional)</p>
+    {% if error %}<div class="alert err no-print" style="margin-top:10px">{{ error }} <a href="#email-copy">Try again</a></div>{% endif %}
+    {% endif %}
   </div>
 
   <h2>1. Your experience is the advantage</h2>
@@ -102,11 +112,22 @@
     <h3 style="margin-top:0">Want help moving faster?</h3>
     <ul class="checks" style="margin:8px 0 14px">
       <li><a href="/free/resume-check">Free age-proof resume check</a>: your score and fixes in a minute</li>
-      <li><a href="/build">A tailored resume and cover letter</a>, written from your real experience, for Rs {{ cfg.PRICE_RUPEES }}</li>
+      <li><a href="/build">A tailored resume and cover letter</a>, written from your real experience. {% if cfg.FREE_TRIAL %}Your first one is free, then Rs {{ cfg.PRICE_RUPEES }}{% else %}Rs {{ cfg.PRICE_RUPEES }}{% endif %}</li>
       <li><a href="/book/claude">Learn Claude 1:1 with {{ cfg.OWNER_NAME }}</a>: build a real project from your work in 90 minutes</li>
       <li><a href="/book/call">A career strategy call</a> to plan your next move</li>
     </ul>
   </div>
+  {% if not reader and not sent %}
+    <form id="email-copy" class="card no-print" method="post" action="/free/playbook" style="margin-top:30px;padding:16px 18px">
+      {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+      <strong style="color:var(--navy-dark)">Want a copy in your inbox?</strong> <span style="color:var(--muted)">Optional. Keep it handy and come back to the 30-day plan.</span>
+      <div class="email-copy">
+        <input type="email" name="email" required autocomplete="email" inputmode="email" placeholder="you@email.com" value="{{ form.email or '' }}" aria-label="Email">
+        <button class="btn" type="submit">Email it to me</button>
+      </div>
+      <p class="fine">We may send the odd career tip; unsubscribe anytime. <a href="/privacy">Privacy policy</a>.</p>
+    </form>
+  {% endif %}
   <p style="font-size:13px;color:var(--muted);margin-top:20px">Claude is a product of Anthropic. {{ cfg.SITE_NAME }} is independent and not affiliated with Anthropic.</p>
 </div>
 {% endblock %}

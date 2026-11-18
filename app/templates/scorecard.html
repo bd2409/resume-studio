@@ -1,12 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Free startup marketing scorecard | {{ cfg.OWNER_NAME }}{% endblock %}
+{% block title %}FREE startup marketing scorecard: 2 minutes, no sign-up | {{ cfg.OWNER_NAME }}{% endblock %}
 {% block description %}Answer 10 yes-or-no questions and get a score out of 100 for your startup's marketing engine, with the gaps to fix first. Free, no sign-up.{% endblock %}
+{% block og_image %}{% include "_og_free.html" %}{% endblock %}
 {% block content %}
 <section class="block soft">
   <div class="wrap narrow">
     <div class="section-title">
+      {% with strip = ['100% free', 'No sign-up', 'No email', '2 minutes'] %}{% include "_free_strip.html" %}{% endwith %}
       <h2>How strong is your marketing engine?</h2>
-      <p>10 yes-or-no questions, 2 minutes. Answer honestly: "sort of" counts as no. You get a score out of 100 and the gaps to fix first. Nothing is stored or sent anywhere.</p>
+      <p>10 yes-or-no questions. Answer honestly: "sort of" counts as no. You get a score out of 100 and the gaps to fix first. Nothing is stored or sent anywhere.</p>
     </div>
     <form id="sc" class="card sc-form">
       {% set questions = [

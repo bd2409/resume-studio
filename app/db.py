@@ -3,7 +3,7 @@ import json
 import secrets
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from . import config
 
@@ -50,6 +50,13 @@ CREATE TABLE IF NOT EXISTS enquiries (
     phone       TEXT NOT NULL,
     org         TEXT NOT NULL DEFAULT '',
     details     TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS visits (
+    day     TEXT NOT NULL,
+    path    TEXT NOT NULL,
+    source  TEXT NOT NULL,
+    views   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, path, source)
 );
 """
 
@@ -223,3 +230,22 @@ def enquiries(limit=100):
     with conn() as c:
         rows = c.execute("SELECT * FROM enquiries ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
     return [dict(r) for r in rows]
+
+
+def add_visit(path, source):
+    """Counts one view of a free page per day, page and source (e.g. "linkedin / dm"), so the admin can see drop-off."""
+    day = datetime.now(timezone.utc).date().isoformat()
+    with conn() as c:
+        c.execute("INSERT INTO visits (day, path, source, views) VALUES (?,?,?,1) "
+                  "ON CONFLICT(day, path, source) DO UPDATE SET views = views + 1", (day, path, source))
+
+
+def visit_summary(days=30):
+    """Views per free page and source over the last `days`, next to the leads each page produced."""
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).date().isoformat()
+    with conn() as c:
+        rows = c.execute("SELECT path, source, SUM(views) AS views FROM visits WHERE day >= ? "
+                         "GROUP BY path, source ORDER BY path, views DESC", (since,)).fetchall()
+        leads = {r["kind"]: r["n"] for r in c.execute(
+            "SELECT kind, COUNT(*) AS n FROM enquiries WHERE created_at >= ? GROUP BY kind", (since,))}
+    return [dict(r) for r in rows], leads

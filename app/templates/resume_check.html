@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Free age-proof resume check for professionals 35+ | {{ cfg.SITE_NAME }}{% endblock %}
+{% block title %}FREE resume check: your score in 1 minute, no sign-up | {{ cfg.SITE_NAME }}{% endblock %}
 {% block description %}Upload your resume and get a free score, what's dating it, the strengths to lead with and quick fixes. Built for experienced professionals.{% endblock %}
+{% block og_image %}{% include "_og_free.html" %}{% endblock %}
 {% block content %}{% set form = form or {} %}
 <section class="block soft">
   <div class="wrap narrow">
@@ -40,26 +41,31 @@
     </div>
   {% else %}
     <div class="page-head" style="padding-top:0">
-      <h1>🧭 Free age-proof resume check</h1>
-      <p>For experienced professionals. Upload your resume and in about a minute you'll see your score, what may be dating it, the strengths to lead with, and quick fixes.</p>
+      {% with strip = ['100% free', 'No sign-up', 'No card', 'Results in 1 minute'] %}{% include "_free_strip.html" %}{% endwith %}
+      <h1>Is your resume quietly working against you?</h1>
+      <p>Upload it and get a free score out of 100, what may be dating it, the strengths to lead with, and quick fixes. Built for experienced professionals.</p>
     </div>
-    <form class="form-card" method="post" action="/free/resume-check" enctype="multipart/form-data" id="check-form" style="margin:24px 0 60px">
+    <form class="form-card" method="post" action="/free/resume-check" enctype="multipart/form-data" id="check-form" style="margin:18px 0 60px">
       {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
-      <label for="resume">Your resume <span class="hint">(PDF or Word, up to {{ cfg.MAX_FILE_MB }} MB)</span></label>
-      <input type="file" id="resume" name="resume" required accept=".pdf,.doc,.docx,.rtf,.odt,.txt">
-      <label for="target_role">Role you're aiming for <span class="hint">(optional)</span></label>
-      <input type="text" id="target_role" name="target_role" maxlength="120" value="{{ form.target_role or '' }}" placeholder="For example: Plant head, operations">
-      <div class="row3">
-        <div><label for="name">Your name</label><input type="text" id="name" name="name" required value="{{ form.name or '' }}"></div>
-        <div><label for="email">Email</label><input type="email" id="email" name="email" required value="{{ form.email or '' }}"></div>
-        <div><label for="phone">WhatsApp <span class="hint">(optional)</span></label><input type="tel" id="phone" name="phone" value="{{ form.phone or '' }}" placeholder="+91"></div>
-      </div>
-      <label class="check" style="margin-top:18px">
-        <input type="checkbox" name="consent" value="yes" required>
-        <span>I agree to the <a href="/privacy" target="_blank">privacy policy</a>. My resume is read once for this check and not stored. I'm happy to get occasional career tips by email.</span>
+      <label for="resume" class="drop" id="drop">
+        <input type="file" id="resume" name="resume" required accept=".pdf,.doc,.docx,.rtf,.odt,.txt">
+        <strong id="drop-title">📄 Tap to upload your resume</strong>
+        <span id="drop-hint">PDF or Word, up to {{ cfg.MAX_FILE_MB }} MB</span>
       </label>
+      <label for="email">Email <span class="hint">(we send your results here)</span></label>
+      <input type="email" id="email" name="email" required autocomplete="email" inputmode="email" value="{{ form.email or '' }}">
+      <details style="margin-top:14px"{% if form.name or form.target_role or form.phone %} open{% endif %}>
+        <summary style="cursor:pointer;color:var(--navy)">Add your name and target role (optional, sharper advice)</summary>
+        <label for="name">Your name</label>
+        <input type="text" id="name" name="name" autocomplete="name" value="{{ form.name or '' }}">
+        <label for="target_role">Role you're aiming for</label>
+        <input type="text" id="target_role" name="target_role" maxlength="120" value="{{ form.target_role or '' }}" placeholder="For example: Plant head, operations">
+        <label for="phone">WhatsApp</label>
+        <input type="tel" id="phone" name="phone" autocomplete="tel" value="{{ form.phone or '' }}" placeholder="+91">
+      </details>
       <button class="btn big" type="submit" id="check-btn" style="width:100%;margin-top:22px">Check my resume free</button>
-      <p style="font-size:13px;color:var(--muted);margin-top:12px">One free check per email.</p>
+      <p class="fine">Free, no payment, no account. Your resume is read once for this check and never stored. By tapping the button you agree to the <a href="/privacy" target="_blank">privacy policy</a>; we may send the odd career tip, unsubscribe anytime. One free check per email.</p>
+      {% include "_free_from.html" %}
     </form>
   {% endif %}
   </div>
@@ -69,5 +75,12 @@
 <script>
 const f = document.getElementById('check-form');
 if (f) f.addEventListener('submit', () => { const b = document.getElementById('check-btn'); b.disabled = true; b.textContent = 'Reading your resume... about a minute'; });
+const r = document.getElementById('resume');
+if (r) r.addEventListener('change', () => {
+  const file = r.files[0]; if (!file) return;
+  document.getElementById('drop').classList.add('has-file');
+  document.getElementById('drop-title').textContent = '✓ ' + file.name;
+  document.getElementById('drop-hint').textContent = 'Tap to choose a different file';
+});
 </script>
 {% endblock %}

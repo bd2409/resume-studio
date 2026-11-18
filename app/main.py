@@ -302,6 +302,44 @@ for _path, _template in STATIC_PAGES.items():
     app.add_api_route(_path, _static_page(_template), methods=["GET"], response_class=HTMLResponse)
 
 
+# Short, clean links for LinkedIn DMs: bhargabdas.in/check reads better than a long /free/...?utm_... link.
+SHORT_LINKS = {"/check": "/free/resume-check", "/playbook": "/free/playbook", "/scorecard": "/free/marketing-scorecard"}
+
+
+def _short_link(target):
+    def handler(request: Request):
+        query = str(request.url.query) or "utm_source=linkedin&utm_medium=dm"
+        return RedirectResponse(f"{target}?{query}", status_code=302)
+    return handler
+
+
+for _path, _target in SHORT_LINKS.items():
+    app.add_api_route(_path, _short_link(_target), methods=["GET"], include_in_schema=False)
+
+BOT_UA = re.compile(r"bot|crawl|spider|preview|slurp|facebookexternalhit|whatsapp|embedly|headless", re.I)
+
+
+@app.middleware("http")
+async def count_free_page_views(request: Request, call_next):
+    """Counts views of the free tools by source, so /admin shows how many people opened each link vs. used it."""
+    response = await call_next(request)
+    path = request.url.path.rstrip("/") or "/"
+    if request.method == "GET" and path.startswith("/free") and response.status_code == 200 \
+            and not BOT_UA.search(request.headers.get("user-agent", "")) and "t" not in request.query_params:
+        q = request.query_params
+        source = " / ".join(x for x in (q.get("utm_source", ""), q.get("utm_medium", "")) if x)[:60]
+        if not source:
+            ref = request.headers.get("referer", "")
+            host = urllib.parse.urlparse(ref).netloc.lower()
+            source = "linkedin" if "linkedin" in host or "lnkd" in host else ("direct" if not host else
+                                                                               "internal" if "bhargabdas" in host else host)
+        try:
+            await run_in_threadpool(db.add_visit, path, source)
+        except Exception:
+            log.exception("Could not count visit")
+    return response
+
+
 PUBLIC_PAGES = ["/", "/resume", "/blog", "/services", "/free", "/free/playbook", "/free/resume-check", "/free/marketing-scorecard", "/book/claude", "/colleges", "/pricing", "/faq", "/contact", "/terms", "/privacy", "/refund-policy", "/editorial-policy", "/ai/", "/ai/demo.html"]
 
 
@@ -634,11 +672,18 @@ def _valid_email(email):
     return re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email or "") is not None
 
 
+def _name_from_email(email):
+    """A friendly first name when people skip the name box: "rahul.sharma@x.com" -> "Rahul"."""
+    first = re.split(r"[._\-+0-9]", email.split("@")[0])[0]
+    return first.capitalize() if len(first) >= 2 else "there"
+
+
 @app.get("/free/playbook", response_class=HTMLResponse)
-def playbook(request: Request, t: str = ""):
+def playbook(request: Request, t: str = "", sent: str = ""):
     reader = auth.read_cookie(t) if t else None
-    if reader:
-        return page(request, "playbook.html", reader=reader)
+    if reader or not config.PLAYBOOK_GATE:
+        # Open by default: people from a LinkedIn DM read it straight away; emailing a copy is optional.
+        return page(request, "playbook.html", reader=reader, sent=bool(sent), error=None, form={})
     return page(request, "playbook_gate.html", error=None, form={})
 
 
@@ -646,16 +691,19 @@ def playbook(request: Request, t: str = ""):
 async def playbook_signup(request: Request):
     f = await request.form()
     form = {k: (f.get(k) or "").strip()[:200] for k in ("name", "email", "phone", "age_band")}
-    if len(form["name"]) < 2 or not _valid_email(form["email"]):
-        return page(request, "playbook_gate.html", error="Please enter your name and a valid email.", form=form)
+    if not _valid_email(form["email"]) or (config.PLAYBOOK_GATE and len(form["name"]) < 2):
+        error = "Please enter a valid email." if not config.PLAYBOOK_GATE else "Please enter your name and a valid email."
+        tpl = "playbook_gate.html" if config.PLAYBOOK_GATE else "playbook.html"
+        return page(request, tpl, reader=None, sent=False, error=error, form=form)
+    form["name"] = form["name"] or _name_from_email(form["email"])
     if not db.lead_for("playbook", form["email"]):
-        db.add_enquiry("playbook", form["name"], form["email"], form["phone"], "", f"Age: {form['age_band']}")
+        db.add_enquiry("playbook", form["name"], form["email"], form["phone"], "", f"Age: {form['age_band'] or 'not given'}")
     token = auth.make_cookie(form["email"], form["name"])
     link = f"{config.SITE_URL}/free/playbook?t={urllib.parse.quote(token)}"
     mailer.send(form["email"], f"Your 35+ Career Comeback Playbook - {config.SITE_NAME}",
                 f"<p>Hi {html.escape(form['name'])},</p><p>Here's your playbook: <a href=\"{link}\">{link}</a></p>"
                 f"<p>Bhargab</p>")
-    return RedirectResponse(f"/free/playbook?t={urllib.parse.quote(token)}", status_code=303)
+    return RedirectResponse(f"/free/playbook?t={urllib.parse.quote(token)}&sent=1", status_code=303)
 
 
 @app.get("/free/resume-check", response_class=HTMLResponse)
@@ -675,10 +723,10 @@ async def resume_check_submit(request: Request):
     def fail(msg):
         return page(request, "resume_check.html", result=None, error=msg, form=form)
 
-    if len(form["name"]) < 2 or not _valid_email(form["email"]):
-        return fail("Please enter your name and a valid email.")
-    if not form["consent"]:
-        return fail("Please agree to the privacy policy so we can read your resume.")
+    if not _valid_email(form["email"]):
+        return fail("Please enter a valid email, so we can send you your results.")
+    form["name"] = form["name"] if len(form["name"]) >= 2 else _name_from_email(form["email"])
+    # Tapping the button is the consent: the notice right above it says the resume is read once and not stored.
     token = urllib.parse.quote(auth.make_cookie(form["email"], form["name"]))
     if db.lead_for("resume-check", form["email"]):
         return RedirectResponse(f"/free/resume-check?t={token}", status_code=303)  # one free check per email
@@ -1084,7 +1132,8 @@ def admin(request: Request):
     leads = db.enquiries(500)
     for e in leads:
         e["score"] = json.loads(e["details"]).get("score") if e["details"].startswith("{") else None
-    return page(request, "admin.html", orders=orders, enquiries=leads)
+    visits, lead_counts = db.visit_summary(30)
+    return page(request, "admin.html", orders=orders, enquiries=leads, visits=visits, lead_counts=lead_counts)
 
 
 @app.get("/admin/leads.csv", dependencies=[Depends(admin_auth)])
