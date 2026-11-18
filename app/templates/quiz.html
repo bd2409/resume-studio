@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{% if subject %}How do you see {{ subject_name or 'your friend' }} at work? 12 quick taps{% else %}The Hidden Gem Test: are you underrated at work? FREE, 2 minutes{% endif %} | {{ cfg.OWNER_NAME }}{% endblock %}
-{% block description %}{% if subject %}{{ subject_name or 'A friend' }} asked how you see them at work. Answer 12 quick statements, then find out your own type.{% else %}12 quick taps show your Value vs Visibility at work: Hidden Gem, Rising Star, Storyteller or Late Bloomer. Ask a friend to find your blind spots. 100% free, no sign-up.{% endif %}{% endblock %}
+{% block description %}{% if subject %}{{ subject_name or 'A friend' }} asked how you see them at work. Answer 12 quick statements, then find out your own type.{% else %}12 quick taps show your Value vs Visibility at work: Hidden Gem, Rising Star, Storyteller or Late Bloomer. Result in 2 minutes. 100% free, no sign-up.{% endif %}{% endblock %}
 {% block og_image %}{% include "_og_free.html" %}{% endblock %}
 {% block content %}
 <section class="block soft">
@@ -25,7 +25,7 @@
             {% for k in ['hidden-gem', 'rising-star', 'late-bloomer', 'storyteller'] %}{% set t = types[k] %}
             <div><b>{{ t.emoji }} {{ t.name[4:] }}</b>{{ t.tag }}</div>{% endfor %}
           </div>
-          <label for="nm"><b>Your first name</b> (optional, so friends know who's asking)</label>
+          <label for="nm"><b>Your first name</b> (optional)</label>
           <input id="nm" class="qz-name" maxlength="40" autocomplete="given-name" placeholder="e.g. Priya">
           <button class="btn big gold qz-start" id="go">Find my type</button>
           <p class="qz-note" style="text-align:center;margin:12px 0 0">Your result shows straight away. No email needed.</p>
@@ -82,20 +82,9 @@
               </div>
             </div>
 
-            <div class="qz-section qz-friend">
-              <h3>👀 Now find your blind spots</h3>
-              <p style="margin:0">This is you rating yourself. Send this link to 2 or 3 colleagues or friends. They answer the same 12 questions about you, and you see where you and they disagree.</p>
-              <input id="fr-link" readonly aria-label="Your friend link">
-              <div class="qz-share">
-                <button class="cp" type="button" id="fr-cp">Copy friend link</button>
-                <a class="wa" id="fr-wa" target="_blank" rel="noopener">Send on WhatsApp</a>
-              </div>
-              <p class="qz-note" style="margin:10px 0 0">Your private results page (bookmark it): <a id="my-link"></a></p>
-            </div>
-
             <form class="qz-section qz-email" id="em-form">
               <h3 style="margin-top:0">Get your full report by email (optional)</h3>
-              <p style="margin:0 0 10px">We'll email your result and action plan, and tell you each time a friend answers.</p>
+              <p style="margin:0 0 10px">We'll email your result and your action plan, so you have it later.</p>
               <input name="email" type="email" required placeholder="Your email" autocomplete="email">
               <input name="phone" type="tel" placeholder="WhatsApp number (optional)" autocomplete="tel">
               <button class="btn" type="submit" style="width:100%">Email me my report</button>
@@ -103,6 +92,17 @@
             </form>
 
             <div class="qz-section" id="r-cta"></div>
+
+            <details class="qz-section qz-optional">
+              <summary>Optional: curious how others see you?</summary>
+              <p style="margin:10px 0 0">Only if you want to. Send a private link to anyone you trust. They answer the same 12 questions about you, and only you see how their view compares with yours. Your result above is complete without it.</p>
+              <input id="fr-link" readonly aria-label="Your private link for a colleague">
+              <div class="qz-share">
+                <button class="cp" type="button" id="fr-cp">Copy link</button>
+                <a class="wa" id="fr-wa" target="_blank" rel="noopener">Send on WhatsApp</a>
+              </div>
+              <p class="qz-note" style="margin:10px 0 0">Your private results page: <a id="my-link"></a></p>
+            </details>
           </div>
 
           <div id="friend-only" hidden>

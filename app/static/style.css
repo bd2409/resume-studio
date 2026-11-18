@@ -456,3 +456,6 @@ details.more[open] > summary { margin-bottom: 12px; }
 .qz-johari ul { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
 .qz-note { font-size: 13px; color: var(--muted); }
 @media (min-width: 700px) { .qz-card { padding: 34px 36px; } }
+.qz-optional { border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; background: #fff; }
+.qz-optional summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+.qz-optional input { width: 100%; font-size: 14px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; margin: 10px 0 8px; }
