@@ -1,0 +1,11 @@
+{# 2x2 Value vs Visibility map. Needs: types, mine (key), you=(value, vis), optional them=(value, vis). #}
+<div class="qz-wrap-matrix">
+  <div class="qz-matrix">
+    {% for k in ['hidden-gem', 'rising-star', 'late-bloomer', 'storyteller'] %}{% set t = types[k] %}
+    <div class="{{ 'me' if k == mine }}"><b>{{ t.emoji }} {{ t.name[4:] }}</b></div>{% endfor %}
+    {% if you %}<span class="qz-dot you" title="You" style="left:{{ [92, [8, you[1]]|max]|min }}%;top:{{ [92, [8, 100 - you[0]]|max]|min }}%"></span>{% endif %}
+    {% if them %}<span class="qz-dot them" title="Your friends" style="left:{{ [92, [8, them[1]]|max]|min }}%;top:{{ [92, [8, 100 - them[0]]|max]|min }}%"></span>{% endif %}
+  </div>
+  <span class="qz-axis-y">Value ↑</span>
+  <p class="qz-axis-x">Visibility →</p>
+</div>

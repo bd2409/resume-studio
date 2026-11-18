@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}{% if subject %}How do you see {{ subject_name or 'your friend' }} at work? 12 quick taps{% else %}The Hidden Gem Test: are you underrated at work? FREE, 2 minutes{% endif %} | {{ cfg.OWNER_NAME }}{% endblock %}
+{% block description %}{% if subject %}{{ subject_name or 'A friend' }} asked how you see them at work. Answer 12 quick statements, then find out your own type.{% else %}12 quick taps show your Value vs Visibility at work: Hidden Gem, Rising Star, Storyteller or Late Bloomer. Ask a friend to find your blind spots. 100% free, no sign-up.{% endif %}{% endblock %}
+{% block og_image %}{% include "_og_free.html" %}{% endblock %}
+{% block content %}
+<section class="block soft">
+  <div class="wrap">
+    <div class="qz">
+
+      <!-- Intro -->
+      <div id="intro" class="qz-card">
+        {% with strip = ['100% free', 'No sign-up', '2 minutes'] %}{% include "_free_strip.html" %}{% endwith %}
+        {% if subject %}
+          <p class="qz-kicker">The Hidden Gem Test · friend mode</p>
+          <h1>How do you see {{ subject_name or 'your friend' }} at work?</h1>
+          <p class="qz-lead">{{ subject_name or 'They' }} took a 12-question test on how much value they deliver and how visible it is. Now they want to know how <b>you</b> see them. It takes 90 seconds.</p>
+          <label for="nm"><b>Your first name</b> (optional, leave blank to stay anonymous)</label>
+          <input id="nm" class="qz-name" maxlength="40" autocomplete="given-name" placeholder="e.g. Rahul">
+          <button class="btn big gold qz-start" id="go">Start: 12 quick taps</button>
+        {% else %}
+          <p class="qz-kicker">The Hidden Gem Test</p>
+          <h1>Are you underrated at work?</h1>
+          <p class="qz-lead">Most people are judged on what others <i>see</i>, not on what they deliver. 12 quick taps place you on the Value vs Visibility map:</p>
+          <div class="qz-quads">
+            {% for k in ['hidden-gem', 'rising-star', 'late-bloomer', 'storyteller'] %}{% set t = types[k] %}
+            <div><b>{{ t.emoji }} {{ t.name[4:] }}</b>{{ t.tag }}</div>{% endfor %}
+          </div>
+          <label for="nm"><b>Your first name</b> (optional, so friends know who's asking)</label>
+          <input id="nm" class="qz-name" maxlength="40" autocomplete="given-name" placeholder="e.g. Priya">
+          <button class="btn big gold qz-start" id="go">Find my type</button>
+          <p class="qz-note" style="text-align:center;margin:12px 0 0">Your result shows straight away. No email needed.</p>
+        {% endif %}
+        {% include "_free_from.html" %}
+      </div>
+
+      <!-- Questions -->
+      <div id="quiz" class="qz-card" hidden>
+        <div class="qz-progress"><span id="bar"></span></div>
+        <p class="qz-count"><button id="back" type="button">← Back</button><span id="count">1 of 12</span></p>
+        <p class="qz-q" id="q" aria-live="polite"></p>
+        <div class="qz-choices" id="choices">
+          {% for c in choices %}<button type="button" data-v="{{ loop.index }}">{{ c }}</button>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div id="result" hidden>
+        <div class="qz-card">
+          <div class="qz-res-head" id="r-head">
+            <p style="font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px" id="r-kicker">You are</p>
+            <div class="em" id="r-emoji"></div>
+            <h2 id="r-name"></h2>
+            <p id="r-tag"></p>
+          </div>
+          <div class="qz-bars">
+            <div class="qz-bar"><div><span>Value: what you deliver</span><span id="r-v"></span></div><span class="track"><span class="fill" id="r-vbar"></span></span></div>
+            <div class="qz-bar"><div><span>Visibility: how much people see it</span><span id="r-s"></span></div><span class="track"><span class="fill" id="r-sbar" style="background:var(--accent)"></span></span></div>
+          </div>
+          <div class="qz-wrap-matrix">
+            <div class="qz-matrix" id="r-matrix">
+              {% for k in ['hidden-gem', 'rising-star', 'late-bloomer', 'storyteller'] %}{% set t = types[k] %}
+              <div data-k="{{ k }}"><b>{{ t.emoji }} {{ t.name[4:] }}</b></div>{% endfor %}
+              <span class="qz-dot you" id="r-dot"></span>
+            </div>
+            <span class="qz-axis-y">Value ↑</span>
+            <p class="qz-axis-x">Visibility →</p>
+          </div>
+
+          <div id="self-only">
+            <p id="r-about" style="font-size:17px"></p>
+            <div class="qz-section"><h3>Your strengths</h3><ul class="checks" id="r-strengths"></ul></div>
+            <div class="qz-section"><h3>Watch out</h3><p id="r-watch"></p></div>
+            <div class="qz-section"><h3>Do this next</h3><ol id="r-next" style="padding-left:20px"></ol></div>
+
+            <div class="qz-section">
+              <h3>Share your result</h3>
+              <div class="qz-share">
+                <a class="li" id="sh-li" target="_blank" rel="noopener">Share on LinkedIn</a>
+                <a class="wa" id="sh-wa" target="_blank" rel="noopener">WhatsApp</a>
+                <button class="cp" type="button" id="sh-cp">Copy link</button>
+                <a class="dl" id="sh-dl" download>Download my card</a>
+              </div>
+            </div>
+
+            <div class="qz-section qz-friend">
+              <h3>👀 Now find your blind spots</h3>
+              <p style="margin:0">This is you rating yourself. Send this link to 2 or 3 colleagues or friends. They answer the same 12 questions about you, and you see where you and they disagree.</p>
+              <input id="fr-link" readonly aria-label="Your friend link">
+              <div class="qz-share">
+                <button class="cp" type="button" id="fr-cp">Copy friend link</button>
+                <a class="wa" id="fr-wa" target="_blank" rel="noopener">Send on WhatsApp</a>
+              </div>
+              <p class="qz-note" style="margin:10px 0 0">Your private results page (bookmark it): <a id="my-link"></a></p>
+            </div>
+
+            <form class="qz-section qz-email" id="em-form">
+              <h3 style="margin-top:0">Get your full report by email (optional)</h3>
+              <p style="margin:0 0 10px">We'll email your result and action plan, and tell you each time a friend answers.</p>
+              <input name="email" type="email" required placeholder="Your email" autocomplete="email">
+              <input name="phone" type="tel" placeholder="WhatsApp number (optional)" autocomplete="tel">
+              <button class="btn" type="submit" style="width:100%">Email me my report</button>
+              <p class="qz-note" id="em-msg" style="margin:8px 0 0"></p>
+            </form>
+
+            <div class="qz-section" id="r-cta"></div>
+          </div>
+
+          <div id="friend-only" hidden>
+            <p style="font-size:17px">Thanks! {{ subject_name or 'Your friend' }} will see your answers next to their own. They only see your first name if you gave it.</p>
+            <a class="btn big gold" href="/free/hidden-gem?utm_source=quiz&utm_medium=friend" style="width:100%;text-align:center">Now find out your own type →</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var FRIEND = {{ 'true' if subject else 'false' }};
+  var TOKEN = {{ (request.query_params.get('about') or '') | tojson }};
+  var NAME = {{ (subject_name or 'your friend') | tojson }};
+  var Q = {{ questions | tojson }};
+  var CTA = {
+    'hidden-gem': ['Make your value visible: get a resume that shows your wins', '/resume'],
+    'rising-star': ['Aim higher: a resume tailored to the next level up', '/resume'],
+    'storyteller': ['Back your story with proof: free resume check', '/free/resume-check'],
+    'late-bloomer': ['Start your comeback: the free 35+ playbook', '/free/playbook']
+  };
+  var answers = [], i = 0, $ = function (id) { return document.getElementById(id); };
+
+  function show(n) {
+    i = n;
+    var q = Q[i];
+    $('q').textContent = FRIEND ? q[2].replace(/\{n\}/g, NAME) : q[1];
+    $('count').textContent = (i + 1) + ' of ' + Q.length;
+    $('bar').style.width = (i / Q.length * 100) + '%';
+    $('back').style.visibility = i ? 'visible' : 'hidden';
+    document.querySelectorAll('#choices button').forEach(function (b) { b.classList.toggle('on', +b.dataset.v === answers[i]); });
+  }
+  $('go').addEventListener('click', function () {
+    $('intro').hidden = true; $('quiz').hidden = false; show(0); window.scrollTo(0, 0);
+  });
+  $('back').addEventListener('click', function () { if (i) show(i - 1); });
+  document.querySelectorAll('#choices button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      answers[i] = +b.dataset.v; b.classList.add('on');
+      setTimeout(function () { if (i < Q.length - 1) show(i + 1); else finish(); }, 180);
+    });
+  });
+
+  function finish() {
+    $('bar').style.width = '100%';
+    var url = FRIEND ? '/free/hidden-gem/friend/' + encodeURIComponent(TOKEN) : '/free/hidden-gem/take';
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ answers: answers, name: $('nm').value.trim() }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (!j.ok) throw new Error(j.error); render(j); })
+      .catch(function () { $('q').textContent = 'Something went wrong. Please tap your last answer again.'; });
+  }
+
+  function render(j) {
+    var r = j.result;
+    $('quiz').hidden = true; $('result').hidden = false; window.scrollTo(0, 0);
+    $('r-head').style.background = r.color;
+    $('r-kicker').textContent = FRIEND ? 'You see ' + NAME + ' as' : 'You are';
+    $('r-emoji').textContent = r.emoji; $('r-name').textContent = r.name; $('r-tag').textContent = r.tag;
+    $('r-v').textContent = r.value + '%'; $('r-s').textContent = r.visibility + '%';
+    $('r-vbar').style.width = r.value + '%'; $('r-sbar').style.width = r.visibility + '%';
+    $('r-dot').style.left = Math.min(92, Math.max(8, r.visibility)) + '%';
+    $('r-dot').style.top = Math.min(92, Math.max(8, 100 - r.value)) + '%';
+    document.querySelectorAll('#r-matrix > div').forEach(function (d) { d.classList.toggle('me', d.dataset.k === r.key); });
+    if (FRIEND) { $('self-only').hidden = true; $('friend-only').hidden = false; return; }
+    $('r-about').textContent = r.about; $('r-watch').textContent = r.watch;
+    $('r-strengths').innerHTML = ''; r.strengths.forEach(function (s) { var li = document.createElement('li'); li.textContent = s; $('r-strengths').appendChild(li); });
+    $('r-next').innerHTML = ''; r.next.forEach(function (s) { var li = document.createElement('li'); li.textContent = s; $('r-next').appendChild(li); });
+    var share = j.share_link + '?utm_source=share&utm_medium=quiz';
+    var text = r.share + ' Take the free 2-minute Hidden Gem Test: ' + share;
+    $('sh-li').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(share);
+    $('sh-wa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
+    $('sh-dl').href = '/static/og/quiz-' + r.key + '.png';
+    $('sh-cp').onclick = function () { copy(text, $('sh-cp')); };
+    var name = $('nm').value.trim();
+    var ftext = (name ? name + ' here! ' : '') + 'Quick favour: how do you see me at work? 12 quick taps, 90 seconds: ' + j.friend_link;
+    $('fr-link').value = j.friend_link;
+    $('fr-cp').onclick = function () { copy(j.friend_link, $('fr-cp')); };
+    $('fr-wa').href = 'https://wa.me/?text=' + encodeURIComponent(ftext);
+    $('my-link').href = j.my_link; $('my-link').textContent = j.my_link.replace(/^https?:\/\//, '');
+    var c = CTA[r.key];
+    $('r-cta').innerHTML = '<a class="btn big" style="width:100%;text-align:center" href="' + c[1] + '">' + c[0] + '</a>' +
+      '<p class="qz-note" style="text-align:center;margin-top:10px">From {{ cfg.OWNER_NAME }}, who helps people and startups market themselves.</p>';
+    $('em-form').onsubmit = function (e) {
+      e.preventDefault();
+      var f = e.target, data = new FormData(f); data.append('name', name);
+      f.querySelector('button').disabled = true; $('em-msg').textContent = 'Sending...';
+      fetch('/free/hidden-gem/email/' + j.token, { method: 'POST', body: data })
+        .then(function (x) { return x.json(); })
+        .then(function (k) { $('em-msg').textContent = k.ok ? 'Sent! Check your inbox (and spam) in a minute.' : (k.error || 'Please try again.'); if (!k.ok) f.querySelector('button').disabled = false; })
+        .catch(function () { $('em-msg').textContent = 'Please try again.'; f.querySelector('button').disabled = false; });
+    };
+  }
+
+  function copy(text, btn) {
+    var done = function () { var o = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(function () { btn.textContent = o; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
+  }
+})();
+</script>
+{% endblock %}

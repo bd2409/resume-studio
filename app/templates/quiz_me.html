@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}My Hidden Gem Test results | {{ cfg.OWNER_NAME }}{% endblock %}
+{% block description %}Private results page for the Hidden Gem Test.{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block og_image %}{% set og_type = result.key %}{% include "_og_free.html" %}{% endblock %}
+{% block content %}
+<section class="block soft">
+  <div class="wrap">
+    <div class="qz">
+      <div class="qz-card">
+        <div class="qz-res-head" style="background:{{ result.color }}">
+          <p style="font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">{{ (take.name.split(' ')[0] ~ ', you') if take.name else 'You' }} rated yourself</p>
+          <div class="em">{{ result.emoji }}</div>
+          <h2>{{ result.name }}</h2>
+          <p>{{ result.tag }}</p>
+        </div>
+        <div class="qz-bars">
+          <div class="qz-bar"><div><span>Value (you)</span><span>{{ result.value }}%{% if friends %} · friends {{ friend_value }}%{% endif %}</span></div><span class="track"><span class="fill" style="width:{{ result.value }}%"></span></span></div>
+          <div class="qz-bar"><div><span>Visibility (you)</span><span>{{ result.visibility }}%{% if friends %} · friends {{ friend_vis }}%{% endif %}</span></div><span class="track"><span class="fill" style="width:{{ result.visibility }}%;background:var(--accent)"></span></span></div>
+        </div>
+        {% with mine = result.key, you = (result.value, result.visibility), them = ((friend_value, friend_vis) if friends else None) %}{% include "_quiz_matrix.html" %}{% endwith %}
+        {% if friends %}<p class="qz-note" style="margin-top:-8px"><span style="color:var(--accent)">●</span> You &nbsp; <span style="color:var(--navy)">●</span> How {{ friends|length }} friend{{ 's' if friends|length > 1 }} see{{ '' if friends|length > 1 else 's' }} you ({{ friends|map(attribute='friend_name')|select|join(', ') or 'anonymous' }})</p>{% endif %}
+
+        {% if johari %}
+        <div class="qz-section">
+          <h3>Your blind spot window</h3>
+          <div class="qz-johari">
+            <div><b>✅ Open strengths</b>: you and your friends both see these.<ul>{% for s in johari.open %}<li>{{ s }}</li>{% else %}<li>None yet.</li>{% endfor %}</ul></div>
+            <div style="background:#e7f5ee"><b>🎁 Blind strengths</b>: friends see these in you, but you don't. Put them on your resume.<ul>{% for s in johari.blind %}<li>{{ s }}</li>{% else %}<li>None. You know your strengths well.</li>{% endfor %}</ul></div>
+            <div style="background:#fff6e5"><b>🙈 Hidden from others</b>: you see these in yourself, but friends don't. This is your visibility gap.<ul>{% for s in johari.hidden %}<li>{{ s }}</li>{% else %}<li>None. What you see is what they see.</li>{% endfor %}</ul></div>
+            <div><b>🌱 Room to grow</b>: nobody sees these yet.<ul>{% for s in johari.untapped %}<li>{{ s }}</li>{% else %}<li>None.</li>{% endfor %}</ul></div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="qz-section qz-friend">
+          <h3>{{ '👀 Get more answers' if friends else '👀 Find your blind spots' }}</h3>
+          <p style="margin:0">{% if friends %}{{ friends|length }} answered so far. 3 or more gives a clearer picture.{% else %}No friends have answered yet. Send this link to 2 or 3 colleagues or friends; their answers show up here.{% endif %}</p>
+          <input value="{{ friend_link }}" readonly aria-label="Your friend link" onclick="this.select()">
+          <div class="qz-share">
+            <a class="wa" target="_blank" rel="noopener" href="https://wa.me/?text={{ ('Quick favour: how do you see me at work? 12 quick taps, 90 seconds: ' ~ friend_link)|urlencode }}">Send on WhatsApp</a>
+            <a class="li" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url={{ (cfg.SITE_URL ~ '/free/hidden-gem/r/' ~ result.key ~ '?utm_source=share&utm_medium=quiz')|urlencode }}">Share my type</a>
+          </div>
+        </div>
+
+        <div class="qz-section"><h3>Do this next</h3><ol style="padding-left:20px">{% for s in result.next %}<li>{{ s }}</li>{% endfor %}</ol></div>
+        <div class="qz-section">
+          <a class="btn big" style="width:100%;text-align:center" href="/resume">Get a resume that shows your value (first one free)</a>
+          <p class="qz-note" style="text-align:center;margin-top:10px">Keep this page private: it's your personal link.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

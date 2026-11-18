@@ -59,6 +59,10 @@
   </table>
   {% else %}<p>No views counted yet.</p>{% endif %}
 
+  <h2 style="color:var(--navy-dark);margin-top:40px">Hidden Gem quiz (last 30 days)</h2>
+  <p>{{ quiz_stats.total }} people finished the quiz, {{ quiz_stats.emails }} left an email (each one is in Leads below and in the Google Sheet), {{ quiz_stats.friends }} friend answers.
+    {% for k, t in quiz_types.items() %}{{ t.emoji }} {{ t.name }}: {{ quiz_stats.by_type.get(k, 0) }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+
   <h2 style="color:var(--navy-dark);margin-top:40px">Leads and enquiries</h2>
   <p>Free playbook sign-ups, free resume checks and college enquiries. <a href="/admin/leads.csv">Download as CSV</a></p>
   {% if enquiries %}
