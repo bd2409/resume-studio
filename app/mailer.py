@@ -74,7 +74,8 @@ def _send_smtp(to_list, subject, body):
                 server.starttls()
                 server.ehlo()
         with server:
-            if server.has_extn("auth"):
+            server.ehlo_or_helo_if_needed()  # features (like AUTH) are only known after EHLO
+            if server.has_extn("auth") or config.SMTP_PORT == 465:
                 server.login(config.SMTP_USER, config.SMTP_PASSWORD)
             server.send_message(msg)
         _log(msg["To"], subject, "sent")
