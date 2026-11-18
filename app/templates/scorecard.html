@@ -6,9 +6,9 @@
 <section class="block soft">
   <div class="wrap narrow">
     <div class="section-title">
-      {% with strip = ['100% free', 'No sign-up', 'No email', '2 minutes'] %}{% include "_free_strip.html" %}{% endwith %}
+      {% with strip = ['100% free', 'No sign-up', 'Email optional', '2 minutes'] %}{% include "_free_strip.html" %}{% endwith %}
       <h2>How strong is your marketing engine?</h2>
-      <p>10 yes-or-no questions. Answer honestly: "sort of" counts as no. You get a score out of 100 and the gaps to fix first. Nothing is stored or sent anywhere.</p>
+      <p>10 yes-or-no questions. Answer honestly: "sort of" counts as no. You get a score out of 100 and the gaps to fix first. Your answers stay in your browser unless you ask us to email you the result.</p>
     </div>
     <form id="sc" class="card sc-form">
       {% set questions = [
@@ -39,6 +39,14 @@
       <p id="verdict" class="sc-verdict"></p>
       <h3 id="fix-title">Fix these first</h3>
       <ul id="fixes" class="checks"></ul>
+      <form id="sc-email" class="sc-email" style="margin:18px 0 0;padding:14px 16px;border:1px dashed #cfd8e3;border-radius:10px">
+        <p style="margin:0 0 8px;font-weight:600">Want this score and fix list in your inbox? (optional)</p>
+        <input name="email" type="email" required placeholder="Your email" style="width:100%;margin-bottom:8px">
+        <input name="name" placeholder="Your name (optional)" style="width:100%;margin-bottom:8px">
+        <input name="company" placeholder="Startup or company (optional)" style="width:100%;margin-bottom:8px">
+        <button class="btn" type="submit">Email me my score</button>
+        <p id="sc-email-msg" style="margin:8px 0 0;color:var(--muted)"></p>
+      </form>
       <div class="p-actions" style="margin-top:20px">
         <a class="btn big" href="/book/audit">Get a full marketing audit (Rs {{ '{:,}'.format(cfg.PRICE_AUDIT) }})</a>
         <a class="btn big light" href="/blog/startup-marketing-engine-checklist">Read the full checklist</a>
@@ -76,7 +84,19 @@ document.getElementById('sc').addEventListener('submit', function (e) {
   var ul = document.getElementById('fixes'); ul.innerHTML = '';
   fixes.slice(0, 4).forEach(function (f) { var li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
   document.getElementById('fix-title').hidden = fixes.length === 0;
+  window._sc = { score: score, fixes: fixes };
   var r = document.getElementById('result'); r.hidden = false; r.scrollIntoView({ behavior: 'smooth' });
+});
+document.getElementById('sc-email').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var f = e.target, msg = document.getElementById('sc-email-msg'), data = new FormData(f);
+  data.append('score', (window._sc || {}).score);
+  data.append('fixes', ((window._sc || {}).fixes || []).join('\n'));
+  f.querySelector('button').disabled = true; msg.textContent = 'Sending...';
+  fetch('/free/marketing-scorecard', { method: 'POST', body: data })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { msg.textContent = j.ok ? 'Sent! Check your inbox (and spam) in a minute.' : (j.error || 'Please try again.'); if (!j.ok) f.querySelector('button').disabled = false; })
+    .catch(function () { msg.textContent = 'Please try again.'; f.querySelector('button').disabled = false; });
 });
 </script>
 {% endblock %}

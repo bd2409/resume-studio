@@ -168,8 +168,18 @@ def owner_alert(order, what):
     link = f"{config.SITE_URL}/order/{order['token']}"
     lines.append(link)
     mailer.owner_alert(f"{what}: {product['label']} - {order['customer_name']}", lines)
-    sheet.append(what, order["customer_name"], order["email"], order["phone"], product["label"],
-                 "Free" if free else f"Rs {order['amount_paise'] // 100}", order.get("target_role") or "", link)
+    sheet.append(what, order["customer_name"], order["email"], order["phone"],
+                 product["label"] + (f" (target: {order['target_role']})" if order.get("target_role") else ""),
+                 "Free" if free else f"Rs {order['amount_paise'] // 100}", order.get("source") or "", link)
+
+
+def started_row(order_id, price=None):
+    """Sheet row the moment someone fills in a resume or booking form, even if they never pay or finish."""
+    order = db.get_by_id(order_id)
+    product = product_of(order)
+    sheet.append(f"Started: {product['label']} (not finished yet)", order["customer_name"], order["email"],
+                 order["phone"], order.get("target_role") or "", price or f"Rs {order['amount_paise'] // 100}",
+                 order.get("source") or "", f"{config.SITE_URL}/order/{order['token']}")
 
 
 def run_generation(order_id, instructions="", part="all"):
@@ -589,8 +599,10 @@ async def build_submit(
     device = device_id(request) or secrets.token_urlsafe(18)
     db.update(order["id"], files_json=json.dumps(store_uploads(order["id"], saved)), template=template,
               target_role=target_role.strip()[:120], product=product, extra_json=json.dumps(extra),
-              user_email=current_user_email(request), device_id=device)
-    if free_trial_state(request, db.get_by_id(order["id"])) == "eligible":
+              user_email=current_user_email(request), device_id=device, source=_source(request))
+    eligible = free_trial_state(request, db.get_by_id(order["id"])) == "eligible"
+    started_row(order["id"], "Free (first one)" if eligible else None)
+    if eligible:
         # Their first resume is free: skip the "Almost there" payment page and start writing straight away.
         return remember_device(free_trial(order["token"], request, background), device)
     return remember_device(RedirectResponse(f"/order/{order['token']}", status_code=303), device)
@@ -676,7 +688,8 @@ async def book_submit(request: Request, product: str):
                             config.PRODUCTS[product]["price"] * 100)
     extra = {name: form[name][:2000] for name, _, _ in BOOKING_FIELDS[product]}
     db.update(order["id"], product=product, extra_json=json.dumps(extra), user_email=current_user_email(request),
-              files_json=json.dumps(store_uploads(order["id"], saved)) if saved else "[]")
+              files_json=json.dumps(store_uploads(order["id"], saved)) if saved else "[]", source=_source(request))
+    started_row(order["id"])
     return RedirectResponse(f"/order/{order['token']}", status_code=303)
 
 
@@ -732,6 +745,29 @@ async def playbook_signup(request: Request):
                 f"<p>Hi {html.escape(form['name'])},</p><p>Here's your playbook: <a href=\"{link}\">{link}</a></p>"
                 f"<p>Bhargab</p>")
     return RedirectResponse(f"/free/playbook?t={urllib.parse.quote(token)}&sent=1", status_code=303)
+
+
+@app.post("/free/marketing-scorecard")
+async def scorecard_signup(request: Request):
+    """Optional 'email me my score': records the lead and emails them their score and fixes."""
+    f = await request.form()
+    form = {k: (f.get(k) or "").strip()[:300] for k in ("name", "email", "phone", "company", "score")}
+    fixes = [x.strip()[:300] for x in (f.get("fixes") or "").split("\n") if x.strip()][:10]
+    if not _valid_email(form["email"]):
+        return JSONResponse({"ok": False, "error": "Please enter a valid email."}, status_code=400)
+    form["name"] = form["name"] if len(form["name"]) >= 2 else _name_from_email(form["email"])
+    score = re.sub(r"\D", "", form["score"])[:3] or "?"
+    detail = f"Score {score}/100" + (f" · {form['company']}" if form["company"] else "")
+    if not db.lead_for("scorecard", form["email"]):
+        db.add_enquiry("scorecard", form["name"], form["email"], form["phone"], form["company"], detail)
+        lead_alert(request, "Marketing scorecard", form["name"], form["email"], form["phone"], detail)
+    items = "".join(f"<li>{html.escape(x)}</li>" for x in fixes) or "<li>No gaps found. Keep doing what works.</li>"
+    mailer.send(form["email"], f"Your marketing scorecard: {score}/100 - {config.OWNER_NAME}",
+                f"<p>Hi {html.escape(form['name'])},</p><p>Your startup marketing score: <strong>{score}/100</strong>.</p>"
+                f"<p>Fix these first:</p><ul>{items}</ul>"
+                f"<p>Want help? Book a free 30-minute call: <a href=\"{config.SITE_URL}/#contact\">{config.SITE_URL}/#contact</a></p>"
+                f"<p>{config.OWNER_NAME}</p>")
+    return JSONResponse({"ok": True})
 
 
 @app.get("/free/resume-check", response_class=HTMLResponse)
